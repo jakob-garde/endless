@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/garde/source/endless/build",
-  "command": "/usr/bin/c++   -g -o CMakeFiles/endless.dir/src/main.cpp.o -c /home/garde/source/endless/src/main.cpp",
-  "file": "/home/garde/source/endless/src/main.cpp",
-  "output": "CMakeFiles/endless.dir/src/main.cpp.o"
-}
-]

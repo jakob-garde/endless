@@ -1,5 +1,0 @@
-/home/garde/source/endless/build/CMakeFiles/endless.dir
-/home/garde/source/endless/build/CMakeFiles/edit_cache.dir
-/home/garde/source/endless/build/CMakeFiles/rebuild_cache.dir
-/home/garde/source/endless/build/src/CMakeFiles/edit_cache.dir
-/home/garde/source/endless/build/src/CMakeFiles/rebuild_cache.dir
