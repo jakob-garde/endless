@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/endless.dir/src/main.cpp.o -o endless/endless  -Wl,-rpath,/usr/local/lib /usr/local/lib/libraylib.a 
