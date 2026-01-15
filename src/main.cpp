@@ -21,6 +21,18 @@ Array<Animation> LoadAssets(MArena *a_dest) {
     return animations;
 }
 
+void LoadMusic() {
+    // music
+    //music_track_x = LoadMusicStream("resources/some_music_track.mp3");
+
+    float volume = 0.5f;
+    SetMusicVolume(music_track_x, volume);
+    f32 master_volume = 0.3f;
+    SetMasterVolume(master_volume);
+
+    SetMusicTrack(&music_track_x);
+}
+
 void Init() {
     // raylib
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -30,8 +42,6 @@ void Init() {
     SetTargetFPS(60);
     screen_w = GetScreenWidth();
     screen_h = GetScreenHeight();
-
-    // always have this screen size:
     //screen_h = fmin(screen_h, 768);
 
     // usr
@@ -42,19 +52,6 @@ void Init() {
     //entities_next = InitArray<Entity>(&a, 256);
     animations = LoadAssets(&a);
     sounds = LoadSoundEffects(&a);
-
-    // music
-    /*
-    music_track_x = LoadMusicStream("resources/some_music_track.mp3");
-
-    float volume = 0.5f;
-    SetMusicVolume(music_track_x, volume);
-    f32 master_volume = 0.3f;
-    SetMasterVolume(master_volume);
-
-    SetMusicTrack(&music_track_x);
-    */
-
 
     // start
     game.SetState(GS_GAME);
@@ -85,6 +82,7 @@ void FrameDrawAndSwap() {
         }
     }
 
+    DrawText("Debug Text", 0, 0, 48, WHITE);
     EndDrawing();
 
     // copy entitues to next frame
@@ -149,7 +147,7 @@ void Run() {
     Init();
 
     while (!WindowShouldClose()) {
-        if (game.GetState() == GS_END) {
+        if (game.GetState() == GS_GAME) {
             FrameUpdate();
             FrameDrawAndSwap();
         }

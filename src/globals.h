@@ -1,6 +1,8 @@
 #ifndef __ASTEROIDS_TYPES_H__
 #define __ASTEROIDS_TYPES_H__
 
+#include "raylib.h"
+
 
 #include "memory.h"
 #include "entities.h"
@@ -35,7 +37,7 @@ Game game;
 
 bool pause;
 bool debug;
-bool music_enabled = true;
+bool music_enabled;
 
 Array<Animation> animations;
 Array<Entity> entities;
