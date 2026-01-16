@@ -28,6 +28,11 @@ typedef float f32;
 typedef double f64;
 
 
+//
+//  Arena
+//
+
+
 struct MArena {
     u8 *mem;
     u64 cap;
@@ -61,10 +66,28 @@ void ArenaClear(MArena *a) {
     a->used = 0;
 }
 
+// template arg versions
+template<typename T> 
+inline
+T *ArenaAlloc(MArena *a) {
+    return (T*) ArenaAlloc(a, sizeof(T));
+}
+
+template<typename T> 
+inline
+T *ArenaPush(MArena *a, T element) {
+    return (T*) ArenaPush(a, &element, sizeof(T));
+}
+
+
+//
+//  Array
+//
+
 
 // forward declarations for Array method use
 template<typename T> struct Array;
-template<class T> Array<T> InitArray(MArena *a, u32 max_len);
+template<typename T> Array<T> InitArray(MArena *a, u32 max_len);
 
 
 template<typename T>
@@ -121,6 +144,7 @@ Array<T> InitArray(MArena *a, u32 max_len) {
 //
 //  Hasing
 //
+
 
 u64 Hash(u64 x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
@@ -276,7 +300,7 @@ s32 Rand(u64 max_plus_one) {
 
 
 //
-//  Hash map for pointers
+//  Pointer map
 //
 
 
