@@ -76,8 +76,10 @@ void FrameUpdate() {
 
         ent->Update(dt);
 
-        UpdateExt(ent, dt);
+        FrameEntityUpdateExt(ent, dt);
     }
+
+    UpdateExt(dt);
 }
 
 void FrameDrawAndSwap() {
@@ -95,11 +97,12 @@ void FrameDrawAndSwap() {
 
         EntityDrawExt(animations, ent);
 
-        // draw debug info
         if (debug) {
             EntityDrawDebug(ent);
         }
     }
+
+    FrameDrawExt();
 
     EndMode2D();
 
@@ -113,6 +116,15 @@ void FrameDrawAndSwap() {
 
         if (ent->deleted == false) {
             Entity *added = entities_next.Add(*ent);
+
+
+            // TODO: we should have a system for this
+            if (added->tpe == ET_MAP_CROSS) {
+                cross = added;
+            }
+            else if (added->tpe == ET_MAP_PAWS) {
+                paws = added;
+            }
         }
     }
 

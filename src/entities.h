@@ -13,6 +13,7 @@ enum EntityType {
 
     ET_MAP_TILE,
     ET_MAP_CROSS,
+    ET_MAP_PAWS,
 };
 
 enum EntityState {
@@ -106,6 +107,7 @@ struct Entity {
     s32 life_frames;
     f32 duration;
     f32 elapsed;
+    bool disabled;
 
     // map tile
     u64 hash_key;

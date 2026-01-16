@@ -74,7 +74,7 @@ void TileInit(MArena *a_dest, Map *map, u8 colormap[64][4], s32 grid_x, s32 grid
 }
 
 Entity TileEntityCreate(s32 grid_x, s32 grid_y) {
-    Entity tile = CreateEntity(ET_MAP_TILE, animations);
+    Entity tile = {};
     tile.tpe = ET_MAP_TILE;
     tile.disable_draw_frames = true;
     tile.hash_key = TileKey(grid_x, grid_y);
