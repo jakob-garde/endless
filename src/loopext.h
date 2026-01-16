@@ -30,8 +30,7 @@ void InitExt() {
         Entity tile = CreateEntity(ET_MAP_TILE, animations);
         tile.tpe = ET_MAP_TILE;
         tile.disable_draw_frames = true;
-        tile.tile_x = grid_x;
-        tile.tile_y = grid_y;
+        tile.hash_key = TileKey(grid_x, grid_y);
         entities.Add(tile);
     }
 
@@ -42,11 +41,9 @@ void InitExt() {
         Entity tile = CreateEntity(ET_MAP_TILE, animations);
         tile.tpe = ET_MAP_TILE;
         tile.disable_draw_frames = true;
-        tile.tile_x = grid_x;
-        tile.tile_y = grid_y;
+        tile.hash_key = TileKey(grid_x, grid_y);
         entities.Add(tile);
     }
-
 }
 
 
@@ -74,7 +71,7 @@ void EntityDrawExt(Array<Animation> animations, Entity *ent) {
         return;
     }
 
-    Tile *t = MapGetTile(map, ent->tile_x, ent->tile_y);
+    Tile *t = TileGet(map, ent->hash_key);
     s32 sz = map->tile_sz_px;
 
     s32 offset_x = t->grid_x * sz * TILE_W;

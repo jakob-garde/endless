@@ -107,8 +107,7 @@ struct Entity {
     f32 elapsed;
 
     // map tile
-    s32 tile_x;
-    s32 tile_y;
+    u64 hash_key;
 
     // kinematics
     Vector2 position;

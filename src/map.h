@@ -45,9 +45,14 @@ u64 TileKey(s32 grid_x, s32 grid_y) {
     return key;
 }
 
-Tile *MapGetTile(Map *map, s32 grid_x, s32 grid_y) {
+Tile *TileGet(Map *map, s32 grid_x, s32 grid_y) {
     u64 key = TileKey( grid_x, grid_y);
     Tile *tile = (Tile*) MapGet(&map->tile_map, key);
+    return tile;
+}
+
+Tile *TileGet(Map *map, u64 hash_key) {
+    Tile *tile = (Tile*) MapGet(&map->tile_map, hash_key);
     return tile;
 }
 
