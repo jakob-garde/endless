@@ -10,22 +10,6 @@ enum EntityType {
 
     ET_BACKGROUND,
     ET_BACKGROUND_MASK,
-
-    ET_STAR,
-
-    ET_AST_SMALL,
-    ET_AST_MED,
-    ET_AST_LARGE,
-    ET_AST_BRUTAL,
-
-    ET_EXPLOSION_SMALL,
-    ET_EXPLOSION_MED,
-    ET_EXPLOSION_LARGE,
-
-    ET_SHOOT,
-    ET_SHIP,
-    ET_SHIP_CHASH,
-    ET_KING,
 };
 
 struct Frame {
@@ -100,35 +84,11 @@ void UnloadTextures(Array<Animation> animations) {
 enum EntityState {
     ES_UNDEF,
 
-    ES_SHOOT_CHARGE,
-    ES_SHOOT_RELEASE,
-
-    ES_SHIP_IDLE,
-    ES_SHIP_LEFT,
-    ES_SHIP_RIGHT,
-    ES_SHIP_RESPAWN,
-
-    ES_KING_PHASE_0, // peeking up
-    ES_KING_PHASE_1, // one engine
-    ES_KING_PHASE_2, // three engines
-    ES_KING_PHASE_3, // four engines
-    ES_KING_ADVANCE, // moving to ES_KING_PHASE_0
 };
 
 const char *EntityStateToText(EntityState state) {
     if (ES_UNDEF == state) return "ES_UNDEF";
-    else if (ES_SHOOT_CHARGE == state) return "ES_SHOOT_CHARGE";
-    else if (ES_SHOOT_RELEASE == state) return "ES_SHOOT_RELEASE";
-    else if (ES_SHIP_IDLE == state) return "ES_SHIP_IDLE";
-    else if (ES_SHIP_LEFT == state) return "ES_SHIP_LEFT";
-    else if (ES_SHIP_RIGHT == state) return "ES_SHIP_RIGHT";
-    else if (ES_SHIP_RESPAWN == state) return "ES_SHIP_RESPAWN";
-    else if (ES_KING_PHASE_0 == state) return "ES_KING_PHASE_0";
-    else if (ES_KING_PHASE_1 == state) return "ES_KING_PHASE_1";
-    else if (ES_KING_PHASE_2 == state) return "ES_KING_PHASE_2";
-    else if (ES_KING_PHASE_3 == state) return "ES_KING_PHASE_3";
-    else if (ES_KING_ADVANCE == state) return "ES_KING_ADVANCE";
-    else return "ERROR";
+    else assert(1 == 0 && "impl.");
 }
 
 struct Entity {
@@ -138,7 +98,6 @@ struct Entity {
     bool facing_left;
     bool deleted;
     bool disable_debug_draw;
-    bool disable_vy;
     s32 life_frames;
     f32 duration;
     f32 elapsed;
@@ -190,7 +149,7 @@ void EntityDrawDebug(Entity *ent) {
     DrawCircleV(ent->position, 2, RED);
 }
 
-void EntityDraw(Array<Animation> animations, Entity *ent) {
+void EntityDrawFrame(Array<Animation> animations, Entity *ent) {
     Animation ani = animations.arr[ent->ani_idx0 + ent->ani_idx];
     Frame frame = ani.frames.arr[ent->frame_idx];
 
@@ -208,16 +167,6 @@ void EntityDraw(Array<Animation> animations, Entity *ent) {
     }
 
     DrawTexturePro(frame.tex, frame.source, ent->ani_rect, ent->ani_offset, ent->rot, WHITE);
-}
-
-Entity *FindFirstEntityByType(EntityType tpe, Array<Entity> entities) {
-    for (s32 i = 0; i < entities.len; ++i) {
-        Entity *ent = entities.arr + i;
-        if (ent->tpe == tpe) {
-            return ent;
-        }
-    }
-    return NULL;
 }
 
 Entity CreateEntity(EntityType tpe, Array<Animation> animations, bool select_random = true) {
@@ -268,11 +217,9 @@ Entity CreateEntity(EntityType tpe, Array<Animation> animations, bool select_ran
     return {};
 }
 
-
 enum SoundType {
-    SE_EXPLOSION,
-    SE_SHOOT,
-    SE_CRASH,
+    SE_UNDEF,
+
 };
 
 struct SEffect {

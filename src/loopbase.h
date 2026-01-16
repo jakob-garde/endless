@@ -25,7 +25,7 @@ void Init() {
 
     MArena a = ArenaCreate(arena_mem, ARENA_CAP);
     entities = InitArray<Entity>(&a, 256);
-    //entities_next = InitArray<Entity>(&a, 256);
+    entities_next = InitArray<Entity>(&a, 256);
     animations = LoadAssets(&a);
     sounds = LoadSoundEffects(&a);
 
@@ -82,7 +82,7 @@ void FrameDrawAndSwap() {
     for (s32 i = 0; i < entities.len; ++i) {
         Entity *ent = entities.arr + i;
 
-        EntityDraw(animations, ent);
+        EntityDrawFrame(animations, ent);
 
         EntityDrawExt(animations, ent);
 

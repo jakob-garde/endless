@@ -97,4 +97,15 @@ Array<s32> AnimationGetAllByType(MArena *a_tmp, EntityType tpe) {
     return result;
 }
 
+Entity *FindFirstEntityByType(EntityType tpe, Array<Entity> entities) {
+    for (s32 i = 0; i < entities.len; ++i) {
+        Entity *ent = entities.arr + i;
+        if (ent->tpe == tpe) {
+            return ent;
+        }
+    }
+    return NULL;
+}
+
+
 #endif
