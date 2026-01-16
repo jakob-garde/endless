@@ -18,6 +18,10 @@ void InitExt() {
     // ...
 
     Map *map = InitForestMap(&a_life);
+    MapInitTile(&a_life, map, 0, 0);
+    MapInitTile(&a_life, map, -1, 0);
+    MapInitTile(&a_life, map, 0, -1);
+    MapInitTile(&a_life, map, -1, -1);
 }
 
 

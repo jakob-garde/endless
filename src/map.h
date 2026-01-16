@@ -6,7 +6,7 @@
 #include "memory.h"
 
 
-#define MAP_TILES_CAP 64
+#define MAP_TILES_CAP 255
 #define TILE_W 64
 #define TILE_H 64
 
@@ -30,7 +30,17 @@ Map *InitForestMap(MArena *a_dest) {
 
 inline
 u64 TileKey(s32 grid_x, s32 grid_y) {
-    u64 key = grid_x << 32 + grid_y;
+    u64 key = ((u64) 1) << 63; // avoid 0,0 resulting in key == 0
+    u32 half_largest_u32 = ((u32) -1) / 2;
+    if (grid_x < 0) {
+        grid_x = grid_x + half_largest_u32; 
+        assert(grid_x >= 0);
+    }
+    if (grid_y < 0) {
+        grid_y = grid_y + half_largest_u32; 
+        assert(grid_y >= 0);
+    }
+    key += grid_x << 31 + grid_y;
     return key;
 }
 
