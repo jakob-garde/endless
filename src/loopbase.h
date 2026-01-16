@@ -9,25 +9,24 @@
 #include "loopext.h"
 
 
-void Init() {
+void Init(const char *title) {
     // raylib
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "Asteroids");
+    InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), title);
     InitAudioDevice();
     ToggleFullscreen();
     SetTargetFPS(60);
     screen_w = GetScreenWidth();
     screen_h = GetScreenHeight();
-    //screen_h = fmin(screen_h, 768);
 
     // usr
     RandInit();
 
-    MArena a = ArenaCreate(arena_mem, ARENA_CAP);
-    entities = InitArray<Entity>(&a, 256);
-    entities_next = InitArray<Entity>(&a, 256);
-    animations = LoadAssets(&a);
-    sounds = LoadSoundEffects(&a);
+    a_life = ArenaCreate(arena_mem, ARENA_CAP);
+    entities = InitArray<Entity>(&a_life, 256);
+    entities_next = InitArray<Entity>(&a_life, 256);
+    animations = LoadAssets(&a_life);
+    sounds = LoadSoundEffects(&a_life);
 
     //
     InitExt();
@@ -125,7 +124,7 @@ void Close() {
 }
 
 void Run() {
-    Init();
+    Init(title);
 
     while (!WindowShouldClose()) {
         if (game.GetState() == GS_GAME) {

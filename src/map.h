@@ -21,7 +21,7 @@ struct Map {
     s32 tile_sz_px;
 };
 
-Map *InitMap(MArena *a_dest) {
+Map *InitForestMap(MArena *a_dest) {
     Map *map = ArenaAlloc<Map>(a_dest);
     map->tile_map = InitMap(a_dest, MAP_TILES_CAP * 2);
 

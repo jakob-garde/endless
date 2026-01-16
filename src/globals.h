@@ -10,6 +10,7 @@
 
 #define ARENA_CAP 1024 * 1024 * 64
 u8 arena_mem[ARENA_CAP];
+MArena a_life;
 
 
 enum GameState {

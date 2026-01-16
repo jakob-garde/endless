@@ -7,9 +7,17 @@
 #include "globals.h"
 #include "assets.h"
 
+// app specific
+#include "map.h"
+
+
+const char *title = "Endless Forest";
+
 
 void InitExt() {
     // ...
+
+    Map *map = InitForestMap(&a_life);
 }
 
 
