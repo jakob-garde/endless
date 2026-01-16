@@ -35,6 +35,7 @@ public:
     }
 };
 Game game;
+Camera2D cam;
 
 bool pause;
 bool debug;

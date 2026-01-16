@@ -28,6 +28,9 @@ void Init(const char *title) {
     animations = LoadAssets(&a_life);
     sounds = LoadSoundEffects(&a_life);
 
+    cam.offset = {};
+    cam.zoom = 1;
+
     //
     InitExt();
 
@@ -81,10 +84,14 @@ void FrameDrawAndSwap() {
     BeginDrawing();
     ClearBackground(BLACK);
 
+    BeginMode2D(cam);
+
     for (s32 i = 0; i < entities.len; ++i) {
         Entity *ent = entities.arr + i;
 
-        EntityDrawFrame(animations, ent);
+        if (ent->disable_draw_frames == false) {
+            EntityDrawFrame(animations, ent);
+        }
 
         EntityDrawExt(animations, ent);
 
@@ -94,7 +101,10 @@ void FrameDrawAndSwap() {
         }
     }
 
+    EndMode2D();
+
     DrawText("Debug Text", 0, 0, 48, WHITE);
+
     EndDrawing();
 
     // copy entitues to next frame

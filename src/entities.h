@@ -10,7 +10,15 @@ enum EntityType {
 
     ET_BACKGROUND,
     ET_BACKGROUND_MASK,
+
+    ET_MAP_TILE,
 };
+
+enum EntityState {
+    ES_UNDEF,
+
+};
+
 
 struct Frame {
     Rectangle source;
@@ -81,11 +89,6 @@ void UnloadTextures(Array<Animation> animations) {
     }
 }
 
-enum EntityState {
-    ES_UNDEF,
-
-};
-
 const char *EntityStateToText(EntityState state) {
     if (ES_UNDEF == state) return "ES_UNDEF";
     else assert(1 == 0 && "impl.");
@@ -98,9 +101,14 @@ struct Entity {
     bool facing_left;
     bool deleted;
     bool disable_debug_draw;
+    bool disable_draw_frames;
     s32 life_frames;
     f32 duration;
     f32 elapsed;
+
+    // map tile
+    s32 tile_x;
+    s32 tile_y;
 
     // kinematics
     Vector2 position;

@@ -7,8 +7,8 @@
 
 
 #define MAP_TILES_CAP 255
-#define TILE_W 64
-#define TILE_H 64
+#define TILE_W 16
+#define TILE_H 16
 
 struct Tile {
     s32 grid_x;
@@ -24,6 +24,7 @@ struct Map {
 Map *InitForestMap(MArena *a_dest) {
     Map *map = ArenaAlloc<Map>(a_dest);
     map->tile_map = InitMap(a_dest, MAP_TILES_CAP * 2);
+    map->tile_sz_px = 32;
 
     return map;
 }
@@ -50,11 +51,18 @@ Tile *MapGetTile(Map *map, s32 grid_x, s32 grid_y) {
     return tile;
 }
 
-void MapInitTile(MArena *a_dest, Map *map, s32 grid_x, s32 grid_y) {
+void TileInit(MArena *a_dest, Map *map, u8 colormap[64][4], s32 grid_x, s32 grid_y) {
     Tile *tile = ArenaAlloc<Tile>(a_dest);
     tile->colors = InitArray<Color>(a_dest, TILE_W * TILE_H);
     tile->grid_x = grid_x;
     tile->grid_y = grid_y;
+
+    for (s32 i = 0; i < TILE_W; ++i) {
+        for (s32 j = 0; j < TILE_H; ++j) {
+            Color col = ColorMapGet(Rand01(), colormap);
+            tile->colors.arr[i * TILE_W + j] = col;
+        }
+    }
 
     u64 key = TileKey(tile->grid_x, tile->grid_y);
     MapPut(&map->tile_map, key, tile);
