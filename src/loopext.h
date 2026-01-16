@@ -8,6 +8,11 @@
 #include "assets.h"
 
 
+void InitExt() {
+    // ...
+}
+
+
 void UpdateExt(Entity *ent, f32 dt) {
     // ...
 }

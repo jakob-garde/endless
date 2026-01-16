@@ -29,6 +29,9 @@ void Init() {
     animations = LoadAssets(&a);
     sounds = LoadSoundEffects(&a);
 
+    //
+    InitExt();
+
     // start
     game.SetState(GS_GAME);
 }
