@@ -12,6 +12,7 @@ enum EntityType {
     ET_BACKGROUND_MASK,
 
     ET_MAP_TILE,
+    ET_MAP_CROSS,
 };
 
 enum EntityState {

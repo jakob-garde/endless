@@ -41,7 +41,7 @@ u64 TileKey(s32 grid_x, s32 grid_y) {
         grid_y = grid_y + half_largest_u32; 
         assert(grid_y >= 0);
     }
-    key += grid_x << 31 + grid_y;
+    key += (grid_x << 31) + grid_y;
     return key;
 }
 
@@ -73,8 +73,28 @@ void TileInit(MArena *a_dest, Map *map, u8 colormap[64][4], s32 grid_x, s32 grid
     MapPut(&map->tile_map, key, tile);
 }
 
-void MapDrawTile(Map *map, Vector2 camera_offset) {
+Entity TileEntityCreate(s32 grid_x, s32 grid_y) {
+    Entity tile = CreateEntity(ET_MAP_TILE, animations);
+    tile.tpe = ET_MAP_TILE;
+    tile.disable_draw_frames = true;
+    tile.hash_key = TileKey(grid_x, grid_y);
 
+    return tile;
+}
+
+inline
+void TileDraw(Tile *t, s32 square_sz) {
+    s32 offset_x = t->grid_x * square_sz * TILE_W;
+    s32 offset_y = t->grid_y * square_sz * TILE_H;
+
+    for (s32 i = 0; i < TILE_W; ++i) {
+        for (s32 j = 0; j < TILE_H; ++j) {
+            // draw the square given colour
+
+            Color col = t->colors.arr[i * TILE_W + j];
+            DrawRectangle(i * square_sz + offset_x, j * square_sz + offset_y, square_sz, square_sz, col);
+        }
+    }
 }
 
 
