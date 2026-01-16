@@ -118,9 +118,9 @@ Array<T> InitArray(MArena *a, u32 max_len) {
 }
 
 
-// TODO: hashing: hash, random, map
-// TODO: deg2rot, rot2deg
-
+//
+//  Hasing
+//
 
 u64 Hash(u64 x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
@@ -128,6 +128,63 @@ u64 Hash(u64 x) {
     x = ((x >> 16) ^ x);
     return x;
 }
+
+
+inline
+u64 HashDJB2(const char *key) {
+    // djb2 - see http://www.cse.yorku.ca/~oz/hash.html
+    u64 hash = 5381;
+
+    s32 c;
+    u32 i = 0;
+    u32 len = strlen(key);
+    while (i < len) {
+        c = key[i];
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+        i++;
+    }
+    return hash;
+}
+
+inline
+u64 HashStringValue(const char *key) {
+    u64 hash = HashDJB2( key );
+    return hash;
+}
+
+
+// TODO: Str and Str version of hashing
+
+
+/*
+inline
+u64 HashDJB2(Str skey) {
+    // djb2 - see http://www.cse.yorku.ca/~oz/hash.html
+    u64 hash = 5381;
+
+    s32 c;
+    u32 i = 0;
+    while (i < skey.len) {
+        c = skey.str[i];
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+        i++;
+    }
+    return hash;
+}
+
+inline
+u64 HashStringValue(Str key) {
+    u64 hash = HashDJB2(key);
+    return hash;
+}
+*/
+
+
+//
+//  RNG
+//
+
+
 void Kiss_SRandom(u64 state[7], u64 seed) {
     if (seed == 0) seed = 1;
     state[0] = seed | 1; // x
@@ -212,12 +269,240 @@ bool RandBin() {
     return num == 1;
 }
 
-s32 Rand(u64 max) {
-    u64 num =  Kiss_Random(g_kiss_randstate) % max;
+s32 Rand(u64 max_plus_one) {
+    u64 num =  Kiss_Random(g_kiss_randstate) % max_plus_one;
     return (s32) num;
 }
 
 
+//
+//  Hash map for pointers
+//
+
+
+struct KeyVal {
+    u64 key;
+    u64 val;
+    s64 next;
+};
+
+struct HashMap {
+    Array<KeyVal> slots;
+    u32 collisions;
+    u32 load;
+    u32 overflows;
+
+    void Print() {
+        printf("load: %u, collisions: %u, overflows: %u\n", load, collisions, overflows);
+    }
+    void PrintElements() {
+        for (s32 i = 0; i < slots.len; ++i) {
+            KeyVal kv = slots.arr[i];
+            printf("%d: key: %lu, val: %lu, next: %ld\n", i, kv.key, kv.val, kv.next);
+        }
+    }
+};
+
+HashMap InitMap(MArena *a_dest, u32 nslots = 1023) {
+    HashMap map = {};
+    map.slots = InitArray<KeyVal>(a_dest, nslots);
+    map.slots.len = nslots;
+    return map;
+}
+
+void MapClear(HashMap *map) {
+    memset(map->slots.arr, 0, sizeof(KeyVal) * map->slots.len);
+    map->collisions = 0;
+    map->load = 0;
+    map->overflows = 0;
+}
+
+struct MapIter {
+    s32 slot_idx;
+    s32 occ_slots_cnt;
+};
+
+s64 MapPut(HashMap *map, u64 key, u64 val) {
+    assert(key != 0);
+
+    u64 len = (u64) map->slots.len;
+
+    // full-guard
+    if (map->load == len) {
+        map->overflows++;
+        return -1;
+    }
+
+    KeyVal *slot0 = map->slots.arr + (key % len);
+    KeyVal *slot;
+
+    if (slot0->next || slot0->key) {
+        map->collisions++;
+
+        // find the end of the collision chain - or overwrite at matching key within the chain
+        while (slot0->next && slot0->key) {
+
+            if (slot0->key == key) {
+                // overwrite
+                slot0->val = val;
+
+                return slot - map->slots.arr;
+            }
+
+            slot0 = slot0 + slot0->next;
+        }
+        slot = slot0;
+
+        // fint an empty slot
+        while (slot->key != 0) {
+            slot++;
+
+            // wrap-around
+            if (slot == map->slots.arr + len) {
+                slot = map->slots.arr;
+            }
+        }
+
+        // add to the collision chain
+        if (slot0 != slot) {
+            slot0->next = slot - slot0;
+        }
+
+        // sanity check pointer are in range
+        assert(slot >= map->slots.arr);
+        assert(slot < map->slots.arr + len);
+        assert(slot0 >= map->slots.arr);
+        assert(slot0 < map->slots.arr + len);
+    }
+    else {
+        slot = slot0;
+    }
+
+    slot->key = key;
+    slot->val = val;
+    map->load++;
+
+    return slot - map->slots.arr;
+}
+
+u64 MapGet(HashMap *map, u64 key) {
+    if (key == 0) {
+        return 0;
+    }
+    u64 len = (u64) map->slots.len;
+
+    // check the base slot
+    KeyVal *slot = map->slots.arr + (key % len);
+
+    if (slot->key == key) {
+        return slot->val;
+    }
+
+    // iterate the collision chain
+    s64 key_stop = slot->key;
+    while (slot->next) {
+        slot = slot + slot->next;
+
+        if (slot->key == key) {
+            return slot->val;
+        }
+        else if (slot->key == key_stop) {
+            break;
+        }
+    }
+
+    // no takers
+    return 0;
+}
+
+s64 MapGetIndex(HashMap *map, u64 key, s64 *prev_idx) {
+    assert(prev_idx);
+    *prev_idx = -1;
+
+    u64 len = (u64) map->slots.len;
+
+    // check the base slot
+    KeyVal *slot = map->slots.arr + (key % len);
+    if (slot->key == key) {
+        return slot - map->slots.arr;
+    }
+
+    // iterate the collision chain
+    s64 key_stop = slot->key;
+    while (slot->next) {
+        *prev_idx = slot - map->slots.arr;
+        slot = slot + slot->next;
+
+        if (slot->key == key) {
+            return slot - map->slots.arr;
+        }
+        else if (slot->key == key_stop) {
+            break;
+        }
+    }
+
+    // no get
+    *prev_idx = -1;
+    return -1;
+}
+
+s64 MapRemove(HashMap *map, u64 key) {
+    u64 len = (u64) map->slots.len;
+    s64 prev_idx;
+    s64 remove_idx = MapGetIndex(map, key, &prev_idx);
+
+    if (remove_idx == -1) {
+        return -1;
+    }
+
+    KeyVal *remove = map->slots.arr + remove_idx;
+    assert(remove->key == key);
+
+    if (prev_idx >= 0) {
+        KeyVal *prev = map->slots.arr + prev_idx;
+        assert(prev->next + prev_idx == remove - map->slots.arr);
+
+        if (prev->key == 0 && prev->val == 0) {
+            assert(prev->next);
+        }
+        if (remove->next) {
+            prev->next += remove->next;
+        }
+        else {
+            prev->next = 0;
+        }
+    }
+
+    remove->key = 0;
+    remove->val = 0;
+    map->load--;
+
+    return remove_idx;
+}
+
+inline
+s64 MapPut(HashMap *map, void *key, void *val) {
+    return MapPut(map, (u64) key, (u64) val);
+}
+inline
+s64 MapPut(HashMap *map, u64 key, void *val) {
+    return MapPut(map, key, (u64) val);
+}
+
+/*
+inline
+s64 MapPut(HashMap *map, Str skey, void *val) {
+    return MapPut(map, HashStringValue(skey), (u64) val);
+}
+inline
+u64 MapGet(HashMap *map, Str skey) {
+    return MapGet(map, HashStringValue(skey));
+}
+inline
+s64 MapRemove(HashMap *map, Str skey) {
+    return MapRemove(map, HashStringValue(skey));
+}
+*/
 
 
 #endif
