@@ -341,11 +341,6 @@ void MapClear(HashMap *map) {
     map->overflows = 0;
 }
 
-struct MapIter {
-    s32 slot_idx;
-    s32 occ_slots_cnt;
-};
-
 s64 MapPut(HashMap *map, u64 key, u64 val) {
     assert(key != 0);
 
@@ -527,6 +522,25 @@ s64 MapRemove(HashMap *map, Str skey) {
     return MapRemove(map, HashStringValue(skey));
 }
 */
+
+struct MapIter {
+    s32 slot_idx;
+    s32 occ_slots_cnt;
+};
+
+u64 MapNextVal(HashMap *m, MapIter *iter) {
+    while (iter->slot_idx < (s32) m->slots.len) {
+        KeyVal kv = m->slots.arr[iter->slot_idx++];
+
+        if (kv.val) {
+            iter->occ_slots_cnt++;
+
+            return kv.val;
+        }
+
+    }
+    return 0;
+}
 
 
 #endif

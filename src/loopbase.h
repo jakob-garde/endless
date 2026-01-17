@@ -76,7 +76,7 @@ void FrameUpdate() {
 
         ent->Update(dt);
 
-        FrameEntityUpdateExt(ent, dt);
+        UpdateEntityExt(ent, dt);
     }
 
     UpdateExt(dt);
@@ -95,14 +95,14 @@ void FrameDrawAndSwap() {
             EntityDrawFrame(animations, ent);
         }
 
-        EntityDrawExt(animations, ent);
+        DrawEntityExt(animations, ent);
 
         if (debug) {
             EntityDrawDebug(ent);
         }
     }
 
-    FrameDrawExt();
+    DrawExt();
 
     EndMode2D();
 

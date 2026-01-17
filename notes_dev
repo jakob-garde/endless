@@ -1,0 +1,22 @@
+
+260117:
+
+Day 3: 
+
+Simplified map tiles handling.
+
+260116:
+
+Day 2:
+
+Draw a sparse tile map (only four 16x16 tiles for now)
+Draw a cross at the mouse click location and an origin / position (paws)
+Move the paws towards the cross, cross disappears when close
+Struggling to make this into an actual game, trying to come up with ideas.
+
+Day 1: 
+
+Salvaging an old project to become a template, clean up the code etc. 
+trying to create a sort of enitity/loop/animation engine on top of rl
+
+Game ideas.

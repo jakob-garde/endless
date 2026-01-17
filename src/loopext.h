@@ -14,27 +14,19 @@
 
 const char *title = "Endless Forest";
 Map *map;
-
 Entity *cross;
 Entity *paws;
 
 void InitExt() {
-    map = InitForestMap(&a_life);
+    map = EndlessMapInit(&a_life);
 
     s32 grid_x = 0;
     s32 grid_y = 0;
 
-    TileInit(&a_life, map, colormap_paletted_autumn, 0, 0);
-    entities.Add( TileEntityCreate(0, 0) );
-
-    TileInit(&a_life, map, colormap_paletted_jet, 1, 0);
-    entities.Add( TileEntityCreate(1, 0) );
-
-    TileInit(&a_life, map, colormap_paletted_jet, 0, 1);
-    entities.Add( TileEntityCreate(0, 1) );
-
-    TileInit(&a_life, map, colormap_paletted_autumn, 1, 1);
-    entities.Add( TileEntityCreate(1, 1) );
+    TileCreate(&a_life, map, colormap_paletted_autumn, 0, 0);
+    TileCreate(&a_life, map, colormap_paletted_jet, 1, 0);
+    TileCreate(&a_life, map, colormap_paletted_jet, 0, 1);
+    TileCreate(&a_life, map, colormap_paletted_autumn, 1, 1);
 
     Entity c = {};
     c.tpe = ET_MAP_CROSS;
@@ -48,10 +40,15 @@ void InitExt() {
     paws = entities.Add(p);
 }
 
+Vector2 Vector2Normalize(Vector2 v, f32 new_len) {
+    f32 norm = sqrt( v.x*v.x + v.y*v.y );    
+    v.x = v.x / norm * new_len;
+    v.y = v.y / norm * new_len;
 
-void FrameEntityUpdateExt(Entity *ent, f32 dt) {
-    // ...
+    return v;
+}
 
+void UpdateExt(f32 dt) {
     if (IsKeyPressed(KEY_UP)) {
         cam.target.y -= map->tile_sz_px;
     }
@@ -64,17 +61,7 @@ void FrameEntityUpdateExt(Entity *ent, f32 dt) {
     else if (IsKeyPressed(KEY_RIGHT)) {
         cam.target.x += map->tile_sz_px;
     }
-}
 
-Vector2 Vector2Normalize(Vector2 v, f32 new_len) {
-    f32 norm = sqrt( v.x*v.x + v.y*v.y );    
-    v.x = v.x / norm * new_len;
-    v.y = v.y / norm * new_len;
-
-    return v;
-}
-
-void UpdateExt(f32 dt) {
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
         cross->position = GetMousePosition();
         cross->position.x += cam.target.x;
@@ -92,8 +79,21 @@ void UpdateExt(f32 dt) {
     }
 }
 
-void FrameDrawExt() {
-    // post-entity loop draw
+void UpdateEntityExt(Entity *ent, f32 dt) {
+    // ...
+
+}
+
+void DrawExt() {
+    // draw all map tiles
+    MapIter iter = {};
+    Tile *t = NULL;
+    do {
+        t = (Tile*) MapNextVal(&map->tile_map, &iter);
+        if (t) {
+            TileDraw(t, map->tile_sz_px);
+        }
+    } while (t != NULL);
 
     // draw the map cross
     if (cross->disabled == false) {
@@ -114,12 +114,8 @@ void FrameDrawExt() {
     // draw the connector
 }
 
-void EntityDrawExt(Array<Animation> animations, Entity *ent) {
-    if (ent->tpe == ET_MAP_TILE) {
-        Tile *t = TileGet(map, ent->hash_key);
-        assert(t);
-        TileDraw(t, map->tile_sz_px);
-    }
+void DrawEntityExt(Array<Animation> animations, Entity *ent) {
+
 }
 
 

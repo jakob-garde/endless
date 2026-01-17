@@ -21,7 +21,7 @@ struct Map {
     s32 tile_sz_px;
 };
 
-Map *InitForestMap(MArena *a_dest) {
+Map *EndlessMapInit(MArena *a_dest) {
     Map *map = ArenaAlloc<Map>(a_dest);
     map->tile_map = InitMap(a_dest, MAP_TILES_CAP * 2);
     map->tile_sz_px = 32;
@@ -56,7 +56,7 @@ Tile *TileGet(Map *map, u64 hash_key) {
     return tile;
 }
 
-void TileInit(MArena *a_dest, Map *map, u8 colormap[64][4], s32 grid_x, s32 grid_y) {
+void TileCreate(MArena *a_dest, Map *map, u8 colormap[64][4], s32 grid_x, s32 grid_y) {
     Tile *tile = ArenaAlloc<Tile>(a_dest);
     tile->colors = InitArray<Color>(a_dest, TILE_W * TILE_H);
     tile->grid_x = grid_x;
@@ -71,15 +71,6 @@ void TileInit(MArena *a_dest, Map *map, u8 colormap[64][4], s32 grid_x, s32 grid
 
     u64 key = TileKey(tile->grid_x, tile->grid_y);
     MapPut(&map->tile_map, key, tile);
-}
-
-Entity TileEntityCreate(s32 grid_x, s32 grid_y) {
-    Entity tile = {};
-    tile.tpe = ET_MAP_TILE;
-    tile.disable_draw_frames = true;
-    tile.hash_key = TileKey(grid_x, grid_y);
-
-    return tile;
 }
 
 inline
