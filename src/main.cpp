@@ -6,7 +6,7 @@
 #include "globals.h"
 #include "assets.h"
 #include "loopbase.h"
-#include "loopext.h"
+#include "endless.h"
 
 // project specific
 #include "map.h"

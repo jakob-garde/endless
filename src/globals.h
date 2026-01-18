@@ -15,15 +15,15 @@ MArena a_life;
 
 enum GameState {
     GS_TITLE,
-    GS_GAME,
+    GS_OVERWORLD,
+    GS_LOCATION,
     GS_TRANSITION,
     GS_END,
 };
 
 struct Game {
-private:
-    GameState state;
 public:
+    GameState state;
     s32 phase_elapsed;
 
     void SetState(GameState stt) {
@@ -60,6 +60,9 @@ void SetMusicTrack(Music *track) {
 
 f32 screen_w;
 f32 screen_h;
+
+
+s32 location_sz = 12;
 
 
 // helpers
@@ -109,5 +112,12 @@ Entity *FindFirstEntityByType(EntityType tpe, Array<Entity> entities) {
     return NULL;
 }
 
+Vector2 Vector2Normalize(Vector2 v, f32 new_len) {
+    f32 norm = sqrt( v.x*v.x + v.y*v.y );    
+    v.x = v.x / norm * new_len;
+    v.y = v.y / norm * new_len;
+
+    return v;
+}
 
 #endif

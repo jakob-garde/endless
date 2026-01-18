@@ -13,6 +13,7 @@ enum EntityType {
 
     ET_MAP_CROSS,
     ET_MAP_PAWS,
+    ET_MAP_LOCATION,
 };
 
 enum EntityState {
