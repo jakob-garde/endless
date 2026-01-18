@@ -31,6 +31,7 @@ void InitExt() {
     Entity c = {};
     c.tpe = ET_MAP_CROSS;
     c.disable_draw_frames = true;
+    c.disabled = true;
     cross = entities.Add(c);
 
     Entity p = {};
