@@ -14,6 +14,7 @@ struct Tile {
     s32 grid_x;
     s32 grid_y;
     Array<Color> colors;
+    Array<f32> values;
 };
 
 struct Map {
@@ -59,13 +60,16 @@ Tile *TileGet(Map *map, u64 hash_key) {
 void TileCreate(MArena *a_dest, Map *map, u8 colormap[64][4], s32 grid_x, s32 grid_y) {
     Tile *tile = ArenaAlloc<Tile>(a_dest);
     tile->colors = InitArray<Color>(a_dest, TILE_W * TILE_H);
+    tile->values = InitArray<f32>(a_dest, TILE_W * TILE_H);
     tile->grid_x = grid_x;
     tile->grid_y = grid_y;
 
     for (s32 i = 0; i < TILE_W; ++i) {
         for (s32 j = 0; j < TILE_H; ++j) {
-            Color col = ColorMapGet(Rand01(), colormap);
+            f32 val = Rand01();
+            Color col = ColorMapGet(val, colormap);
             tile->colors.arr[i * TILE_W + j] = col;
+            tile->values.arr[i * TILE_W + j] = val;
         }
     }
 
@@ -81,9 +85,15 @@ void TileDraw(Tile *t, s32 square_sz) {
     for (s32 i = 0; i < TILE_W; ++i) {
         for (s32 j = 0; j < TILE_H; ++j) {
             // draw the square given colour
+            //Color col = t->colors.arr[i * TILE_W + j];
+            //DrawRectangle(i * square_sz + offset_x, j * square_sz + offset_y, square_sz, square_sz, col);
 
-            Color col = t->colors.arr[i * TILE_W + j];
-            DrawRectangle(i * square_sz + offset_x, j * square_sz + offset_y, square_sz, square_sz, col);
+            // blit a texture into it
+            f32 x = i * square_sz + offset_x;
+            f32 y = j * square_sz + offset_y;
+            f32 val7 = t->values.arr[i * TILE_W + j] * 7;
+            s32 idx = ((s32) floor(val7)) % 7;
+            DrawTextureEx(tex_forest[idx], {x, y}, 0, 2, WHITE);
         }
     }
 }

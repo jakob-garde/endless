@@ -63,6 +63,8 @@ f32 screen_h;
 
 
 s32 location_sz = 12;
+Texture tex_forest[7];
+
 
 
 // helpers
