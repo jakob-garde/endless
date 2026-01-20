@@ -130,26 +130,6 @@ void UpdateLocation() {
     }
 }
 
-inline
-void TileDraw(Chunk *t) {
-    s32 offset_x = t->grid_x * TILE_SZ * CHUNK_W;
-    s32 offset_y = t->grid_y * TILE_SZ * CHUNK_H;
-
-    for (s32 i = 0; i < CHUNK_W; ++i) {
-        for (s32 j = 0; j < CHUNK_H; ++j) {
-            // draw the square given colour
-            //Color col = t->colors.arr[i * TILE_W + j];
-            //DrawRectangle(i * square_sz + offset_x, j * square_sz + offset_y, square_sz, square_sz, col);
-
-            // blit a texture into it
-            f32 x = i * TILE_SZ + offset_x;
-            f32 y = j * TILE_SZ + offset_y;
-            f32 val7 = t->values.arr[i * CHUNK_W + j] * 7;
-            s32 idx = ((s32) floor(val7)) % 7;
-            DrawTextureEx(tex_forest[idx], {x, y}, 0, 4, WHITE);
-        }
-    }
-}
 void DrawOverworld() {
     ClearBackground(BLACK);
 
@@ -159,7 +139,23 @@ void DrawOverworld() {
     do {
         t = (Chunk*) MapNextVal(&map->chunks, &iter);
         if (t) {
-            TileDraw(t);
+            s32 offset_x = t->grid_x * TILE_SZ * CHUNK_W;
+            s32 offset_y = t->grid_y * TILE_SZ * CHUNK_H;
+
+            for (s32 i = 0; i < CHUNK_W; ++i) {
+                for (s32 j = 0; j < CHUNK_H; ++j) {
+                    // draw the square given colour
+                    //Color col = t->colors.arr[i * TILE_W + j];
+                    //DrawRectangle(i * square_sz + offset_x, j * square_sz + offset_y, square_sz, square_sz, col);
+
+                    // blit a texture into it
+                    f32 x = i * TILE_SZ + offset_x;
+                    f32 y = j * TILE_SZ + offset_y;
+                    f32 val7 = t->values.arr[i * CHUNK_W + j] * 7;
+                    s32 idx = ((s32) floor(val7)) % 7;
+                    DrawTextureEx(tex_forest[idx], {x, y}, 0, 4, WHITE);
+                }
+            }
         }
     } while (t != NULL);
 
