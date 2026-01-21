@@ -7,6 +7,7 @@ enum GameState {
     GS_OVERWORLD,
     GS_LOCATION,
     GS_TRANSITION,
+    GS_TEST,
     GS_END,
 };
 
@@ -33,6 +34,7 @@ enum EntityType {
     ET_MAP_CROSS,
     ET_MAP_PAWS,
     ET_MAP_LOCATION,
+    ET_MAP_SHEET,
 };
 
 enum EntityState {

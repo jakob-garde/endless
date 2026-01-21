@@ -1,5 +1,6 @@
 #include "engine/includes.h"
 #include "overworld.h"
+#include "wfc.h"
 #include "endless.h"
 
 
@@ -8,7 +9,8 @@ void Run() {
     InitEndless();
 
     // start
-    game.SetState(GS_OVERWORLD);
+    //game.SetState(GS_OVERWORLD);
+    game.SetState(GS_TEST);
 
     while (!WindowShouldClose()) {
         UpdateBase();
@@ -21,6 +23,9 @@ void Run() {
         else if (game.state == GS_LOCATION) {
             UpdateLocation();
             DrawLocation();
+        }
+        else if (game.state == GS_TEST) {
+            DrawWFC();
         }
         else {
             assert(1 == 0 && "game mode not implemented");

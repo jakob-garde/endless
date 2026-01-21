@@ -3,8 +3,10 @@
 
 
 #define MAP_TILES_CAP 255
-#define CHUNK_W 16
-#define CHUNK_H 16
+//#define CHUNK_W 16
+//#define CHUNK_H 16
+#define CHUNK_W 8
+#define CHUNK_H 8
 #define TILE_SZ 64
 
 
