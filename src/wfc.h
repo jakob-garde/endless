@@ -1,7 +1,7 @@
 #ifndef __WFC_H__
 #define __WFC_H__
 
-
+/*
 enum TileFlags {
     TF_PASSIVE = 0,
 
@@ -9,20 +9,96 @@ enum TileFlags {
     TF_ROCKS = 1 << 1,
     TF_GRASS = 1 << 2,
 };
+*/
 
 enum TileType {
     TT_SUPERPOSITION,
     TT_FLOWERS,
     TT_ROCKS,
     TT_GRASS,
+
+    TT_CNT,
 };
 
+
+// CPP:
+//      methods
+//      initialization using {} (set non-zero values)
+//      ZII (combined with the above exceptions)
+
+
 struct Tile {
-    TileType tpe;
-    u32 flags;
+    TileType tpe_collapsed;
+    bool options_mem[TT_CNT];
+    s32 options_cnt = TT_CNT;
+    bool is_collapsed;
     Frame frame;
     s32 x;
     s32 y;
+
+    void InitSuperposition() {
+        Enable(TT_SUPERPOSITION);
+        for (s32 i = 0; i < options_cnt; ++i) {
+            options_mem[i] = true;
+        }
+        options_mem[0] = false;
+    }
+
+    s32 Entropy() {
+        s32 entropy = 0;
+        for (s32 i = 0; i < options_cnt; ++i) {
+            if (options_mem[i]) {
+                entropy++;
+            }
+        }
+        assert(entropy <= 3);
+        return entropy;
+    }
+
+    void Enable(TileType tpe) {
+        is_collapsed = false;
+        options_mem[tpe] = true;
+    }
+
+    void Disable(TileType tpe) {
+        assert(tpe != TT_SUPERPOSITION);
+        options_mem[tpe] = false;
+    }
+
+    void Collapse(TileType tpe) {
+        assert(tpe < TT_CNT);
+
+        is_collapsed = true;
+        for (s32 i = 0; i < options_cnt; ++i) {
+            options_mem[i] = false;
+        }
+        options_mem[tpe] = true;
+        tpe_collapsed = tpe;
+    }
+
+    TileType CollapseRandom() {
+        is_collapsed = true;
+        s32 entropy = Entropy();
+        s32 dest = Rand(entropy);
+
+        TileType tpe = TT_SUPERPOSITION;
+        for (s32 i = 0; i < entropy; ++i) {
+            s32 j = i;
+            while (options_mem[j] == false) {
+                j++;
+                assert(j < options_cnt);
+            }
+            if (i == dest) {
+                tpe = (TileType) j;
+                assert(tpe != TT_SUPERPOSITION);
+                assert(tpe != TT_CNT);
+                Collapse(tpe);
+                break;
+            }
+        }
+        assert(tpe != TT_SUPERPOSITION);
+        return tpe;
+    }
 };
 
 
@@ -40,24 +116,26 @@ void InitWFC() {
 
     ani = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1);
 
-    for (s32 i = 0; i < CHUNK_W; ++i) {
-        for (s32 j = 0; j < CHUNK_H; ++j) {
+    for (s32 j = 0; j < CHUNK_H; ++j) {
+        for (s32 i = 0; i < CHUNK_W; ++i) {
             s32 idx = j * CHUNK_W + i;
 
             Tile tile = {};
+            tile.x = i;
+            tile.y = j;
 
             // get a random texture
             s32 rand = Rand(ani.frames.len - 1) + 1;
 
             // collapse into a certain state
             if (rand <= 2) {
-                tile.tpe = TT_FLOWERS;
+                tile.Collapse(TT_FLOWERS);
             }
             else if (rand >= 7) {
-                tile.tpe = TT_ROCKS;
+                tile.Collapse(TT_ROCKS);
             }
             else {
-                tile.tpe = TT_GRASS;
+                tile.Collapse(TT_GRASS);
             }
             tile.frame = ani.frames.arr[ rand ];
 
@@ -65,15 +143,14 @@ void InitWFC() {
         }
     }
 
-    for (s32 i = 0; i < CHUNK_W; ++i) {
-        for (s32 j = 0; j < CHUNK_H; ++j) {
+    for (s32 j = 0; j < CHUNK_H; ++j) {
+        for (s32 i = 0; i < CHUNK_W; ++i) {
             s32 idx = j * CHUNK_W + i;
 
             Tile tile = {};
-            tile.tpe = TT_SUPERPOSITION;
-            tile.flags |= TF_FLOWERS;
-            tile.flags |= TF_ROCKS;
-            tile.flags |= TF_GRASS;
+            tile.x = i;
+            tile.y = j;
+            tile.InitSuperposition();
 
             // get a random texture
             tile.frame = ani.frames.arr[ 0 ];
@@ -83,38 +160,128 @@ void InitWFC() {
     }
 }
 
+
+s32 TileIdx(s32 x, s32 y) {
+    return x + CHUNK_W * y;
+}
+
+s32 TileX(s32 idx) {
+    return idx % CHUNK_W;
+}
+
+s32 TileY(s32 idx) {
+    return idx / CHUNK_W - 1;
+}
+
+TileType tpe_selected;
+
 void RunWFCIteration(MArena *a_tmp) {
 
     // find the min-entropy subset set
-    Array<s32> least = InitArray<s32>(a_tmp, CHUNK_W * CHUNK_H);
+    Array<s32> least = InitArray<s32>(a_tmp, CHUNK_LEN);
 
-    for (s32 i = 0; i < CHUNK_W * CHUNK_H; ++i) {
+    s32 entropy_min = TT_CNT;
+    for (s32 i = 0; i < CHUNK_LEN; ++i) {
         Tile *t = tiles + i;
 
-        if (t->tpe == TT_SUPERPOSITION) {
+        s32 entropy = t->Entropy();
+        //if ((t->is_collapsed == false) && (entropy_min > entropy)) {
+        //    entropy_min = entropy;
+        //}
+        if ((t->is_collapsed == false)) {
+            entropy_min = entropy;
+        } 
+    }
+    if (entropy_min == TT_CNT) {
+        assert(1 == 0 && "finished or error");
+    }
+
+    for (s32 i = 0; i < CHUNK_LEN; ++i) {
+        Tile *t = tiles + i;
+
+        if ((t->is_collapsed == false) && (t->Entropy() == entropy_min)) {
             least.Add(i);
         }
     }
 
-    // collapse a random tile
+    // collapse a random tile from the least-set
     s32 idx = least.arr[Rand(least.len)];
     Tile *t = tiles + idx;
-    s32 selector = Rand(3);
 
-    if (t->flags & TF_ROCKS && selector == 2) {
-        t->tpe = TT_GRASS;
-        s32 rand_flower_idx = Rand(3) + 6;
-        t->frame = ani.frames.arr[ rand_flower_idx ];
+    // collapse and set animation frame 
+    {
+        TileType tpe = t->CollapseRandom();
+        tpe_selected = tpe;
+
+        if (tpe == TT_FLOWERS) {
+            s32 rand_flower_idx = Rand(2) + 1;
+            t->frame = ani.frames.arr[ rand_flower_idx ];
+        }
+        else if (tpe == TT_GRASS) {
+            s32 rand_flower_idx = Rand(3) + 3;
+            t->frame = ani.frames.arr[ rand_flower_idx ];
+        }
+        else if (tpe == TT_ROCKS) {
+            s32 rand_flower_idx = Rand(3) + 6;
+            t->frame = ani.frames.arr[ rand_flower_idx ];
+        }
     }
-    else if (t->flags & TF_FLOWERS && selector == 1) {
-        t->tpe = TT_GRASS;
-        s32 rand_flower_idx = Rand(2) + 1;
-        t->frame = ani.frames.arr[ rand_flower_idx ];
+
+    // update neighbouring tiles
+    Tile *left = NULL;
+    Tile *right = NULL;
+    Tile *above = NULL;
+    Tile *below = NULL;
+
+    if (t->x > 0 && t->x < CHUNK_W) {
+        left = tiles + TileIdx(t->x - 1, t->y);
+        right = tiles + TileIdx(t->x + 1, t->y);
     }
-    else if (t->flags & TF_GRASS) {
-        t->tpe = TT_GRASS;
-        s32 rand_flower_idx = Rand(3) + 3;
-        t->frame = ani.frames.arr[ rand_flower_idx ];
+    else if (t->x == 0) {
+        right = tiles + TileIdx(t->x + 1, t->y);
+    }
+    else if (t->x == CHUNK_W) {
+        left = tiles + TileIdx(t->x - 1, t->y);
+    }
+
+    if (t->y > 0 && t->y < CHUNK_H) {
+        above = tiles + TileIdx(t->x, t->y - 1);
+        below = tiles + TileIdx(t->x, t->y + 1);
+    }
+    else if (t->y == 0) {
+        below = tiles + TileIdx(t->x, t->y + 1);
+    }
+    else if (t->y == CHUNK_H) {
+        above = tiles + TileIdx(t->x, t->y - 1);
+    }
+
+    if (t->tpe_collapsed == TT_ROCKS) {
+        if (left) {
+            left->Disable(TT_FLOWERS);
+        }
+        if (right) {
+            right->Disable(TT_FLOWERS);
+        }
+        if (above) {
+            above->Disable(TT_FLOWERS);
+        }
+        if (below) {
+            below->Disable(TT_FLOWERS);
+        }
+    }
+    else if (t->tpe_collapsed == TT_FLOWERS) {
+        if (left) {
+            left->Disable(TT_ROCKS);
+        }
+        if (right) {
+            right->Disable(TT_ROCKS);
+        }
+        if (above) {
+            above->Disable(TT_ROCKS);
+        }
+        if (below) {
+            below->Disable(TT_ROCKS);
+        }
     }
 }
 
@@ -160,9 +327,16 @@ void DrawWFC() {
                 dest.width = TILE_SZ;
                 dest.height = TILE_SZ;
                 DrawTexturePro(tile.frame.tex, tile.frame.source, dest, {}, 0, WHITE);
+
+                if (tile.is_collapsed == false) {
+                    s32 entropy = tile.Entropy();
+                    DrawText( TextFormat("%d", entropy), x + TILE_SZ/2, y + TILE_SZ/2, 24, BLACK);
+                }
             }
         }
     }
+
+    //DrawText( TextFormat("%d", tpe_selected), 20, 20, 48, BLACK);
 
     if (IsKeyPressed(KEY_SPACE)) {
         RunWFCIteration(a_tmp);
