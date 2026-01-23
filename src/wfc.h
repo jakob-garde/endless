@@ -45,6 +45,9 @@ struct Tile {
     s32 y;
     s32 idx;
 
+    bool is_collapsed;
+    Frame frame;
+
     s32 Left(s32 grid_w, s32 grid_h) {
         s32 x_new;
         if (x == 0) {
@@ -220,13 +223,16 @@ void RunWFC() {
 
 Frame GetFrame(TileType tpe) {
     if (tpe == TT_FLOWERS) {
-        return ani.frames.arr[1];
+        s32 rand = Rand(2) + 1;
+        return ani.frames.arr[rand];
     }
     else if (tpe == TT_GRASS) {
-        return ani.frames.arr[4];
+        s32 rand = Rand(3) + 3;
+        return ani.frames.arr[rand];
     }
     else if (tpe == TT_ROCKS) {
-        return ani.frames.arr[6];
+        s32 rand = Rand(3) + 6;
+        return ani.frames.arr[rand];
     }
     return ani.frames.arr[0];
 }
@@ -242,22 +248,26 @@ void DrawWFC() {
     for (s32 j = 0; j < grid.grid_h; ++j) {
         for (s32 i = 0; i < grid.grid_w; ++i) {
             s32 idx = j * grid.grid_w + i;
-            Tile tile = grid.tiles.arr[idx];
+            Tile *t = grid.tiles.arr + idx;
 
             Rectangle dest = {};
-            dest.x = tile.x * tile_sz;
-            dest.y = tile.y * tile_sz;
+            dest.x = t->x * tile_sz;
+            dest.y = t->y * tile_sz;
             dest.width = tile_sz;
             dest.height = tile_sz;
 
             f32 x = i * tile_sz + offset_x;
             f32 y = j * tile_sz + offset_y;
 
-            DrawText(TextFormat("%d", tile.entropy), dest.x + tile_sz/2, dest.y + tile_sz/2, 16, WHITE);
+            if (t->is_collapsed == false) {
+                t->is_collapsed = true;
+                t->frame = GetFrame( (TileType) t->options[0]);
+            }
 
-            if (tile.entropy == 1) {
-                Frame frame = GetFrame((TileType) tile.options[0]);
-                DrawTexturePro(frame.tex, frame.source, dest, {}, 0, WHITE);
+            DrawText(TextFormat("%d", t->entropy), dest.x + tile_sz/2, dest.y + tile_sz/2, 16, WHITE);
+
+            if (t->entropy == 1) {
+                DrawTexturePro(t->frame.tex, t->frame.source, dest, {}, 0, WHITE);
             }
         }
     }
