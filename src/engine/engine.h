@@ -133,6 +133,8 @@ struct SEffect {
 #define ARENA_CAP 1024 * 1024 * 64
 u8 arena_mem[ARENA_CAP];
 MArena a_life;
+u8 arena_mem_tmp[ARENA_CAP];
+MArena a_tmp;
 
 bool pause;
 bool debug;
@@ -337,6 +339,7 @@ void Init(const char *title) {
     RandInit();
 
     a_life = ArenaCreate(arena_mem, ARENA_CAP);
+    a_tmp = ArenaCreate(arena_mem_tmp, ARENA_CAP);
     entities = InitArray<Entity>(&a_life, 256);
     entities_next = InitArray<Entity>(&a_life, 256);
     animations = InitArray<Animation>(&a_life, 64);

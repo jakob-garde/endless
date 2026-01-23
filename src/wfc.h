@@ -194,16 +194,10 @@ void Collapse(Grid grid, s32 idx) {
     }
 }
 
-u8 mem_tmp[ARENA_CAP];
-MArena _a_tmp;
-MArena *a_tmp;
 Grid grid;
-
 Animation ani;
-void InitWFC() {
-    _a_tmp = ArenaCreate(mem_tmp, ARENA_CAP);
-    a_tmp = &_a_tmp;
 
+void InitWFC() {
     grid = InitGrid(&a_life, 8, 8);
     ani = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1);
 }
@@ -275,8 +269,6 @@ void DrawWFC() {
     if (IsKeyPressed(KEY_SPACE)) {
         RunWFCIteration();
     }
-
-    ArenaClear(a_tmp);
 }
 
 
