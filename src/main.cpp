@@ -10,10 +10,11 @@ void Run() {
 
     // test
     InitWFC();
+    RunWFC();
+    game.SetState(GS_TEST);
 
     // start
     //game.SetState(GS_OVERWORLD);
-    game.SetState(GS_TEST);
 
     while (!WindowShouldClose()) {
         UpdateBase();
