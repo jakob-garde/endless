@@ -66,9 +66,6 @@ void InitEndless() {
     tex_forest[4] = tex_pine02;
     tex_forest[5] = tex_meadow01;
     tex_forest[6] = tex_meadow02;
-
-    // test
-    InitWFC();
 }
 
 void UpdateOverworld() {

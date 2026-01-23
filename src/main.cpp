@@ -8,6 +8,9 @@ void Run() {
     Init("Endless Forest");
     InitEndless();
 
+    // test
+    InitWFC();
+
     // start
     //game.SetState(GS_OVERWORLD);
     game.SetState(GS_TEST);
