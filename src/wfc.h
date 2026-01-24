@@ -2,6 +2,10 @@
 #define __WFC_H__
 
 
+//
+//  lib
+
+
 enum TileType {
     TT_GRASS,
     TT_FLOWERS,
@@ -73,9 +77,9 @@ s32 SelectTile(Grid grid) {
     // just the first one, not a random one !
     s32 entropy_max = 0;
     for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
-        Tile *t = grid.tiles.arr + i;
-        if (t->entropy > entropy_max) {
-            entropy_max = t->entropy;
+        Tile *tile = grid.tiles.arr + i;
+        if (tile->entropy > entropy_max) {
+            entropy_max = tile->entropy;
         }
     }
 
@@ -143,12 +147,17 @@ void Collapse(Grid grid, s32 tile_idx) {
     }
 }
 
+
+//
+//  user
+
+
 Grid grid;
-Animation ani;
+Array<Frame> meadow_frames;
 
 void InitWFC() {
     grid = InitGrid(&a_life, 8, 8);
-    ani = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1);
+    meadow_frames = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
 }
 
 void RunWFCIteration() {
@@ -157,66 +166,61 @@ void RunWFCIteration() {
 }
 
 void RunWFC() {
-    s32 idx = SelectTile(grid);
-    while (idx >= 0) {
-        Collapse(grid, idx);
-        idx = SelectTile(grid);
+    s32 tile_idx = SelectTile(grid);
+    while (tile_idx >= 0) {
+        Collapse(grid, tile_idx);
+        tile_idx = SelectTile(grid);
     }
 }
+
+
+//
+//  drawing
+
 
 Frame GetFrame(TileType tpe) {
     if (tpe == TT_FLOWERS) {
         s32 rand = Rand(2) + 1;
-        return ani.frames.arr[rand];
+        return meadow_frames.arr[rand];
     }
     else if (tpe == TT_GRASS) {
         s32 rand = Rand(3) + 3;
-        return ani.frames.arr[rand];
+        return meadow_frames.arr[rand];
     }
     else if (tpe == TT_ROCKS) {
         s32 rand = Rand(3) + 6;
-        return ani.frames.arr[rand];
+        return meadow_frames.arr[rand];
     }
-    return ani.frames.arr[0];
+    return meadow_frames.arr[0];
 }
 
+#define WFC_TILE_SIZE 64
 void DrawWFC() {
     ClearBackground(BLACK);
-
-    s32 tile_sz = 64;
-
-    s32 offset_x = 0 * tile_sz * grid.grid_w;
-    s32 offset_y = 0 * tile_sz * grid.grid_h;
 
     for (s32 j = 0; j < grid.grid_h; ++j) {
         for (s32 i = 0; i < grid.grid_w; ++i) {
             s32 idx = j * grid.grid_w + i;
-            Tile *t = grid.tiles.arr + idx;
+            Tile *tile = grid.tiles.arr + idx;
 
-            Rectangle dest = {};
-            dest.x = t->x * tile_sz;
-            dest.y = t->y * tile_sz;
-            dest.width = tile_sz;
-            dest.height = tile_sz;
+            Rectangle destination_rec = {};
+            destination_rec.x = tile->x * WFC_TILE_SIZE;
+            destination_rec.y = tile->y * WFC_TILE_SIZE;
+            destination_rec.width = WFC_TILE_SIZE;
+            destination_rec.height = WFC_TILE_SIZE;
 
-            f32 x = i * tile_sz + offset_x;
-            f32 y = j * tile_sz + offset_y;
 
-            if (t->is_collapsed == false) {
-                t->is_collapsed = true;
-                t->frame = GetFrame( (TileType) t->options[0]);
+            if (tile->is_collapsed == false) {
+                tile->is_collapsed = true;
+                tile->frame = GetFrame( (TileType) tile->options[0]);
             }
 
-            DrawText(TextFormat("%d", t->entropy), dest.x + tile_sz/2, dest.y + tile_sz/2, 16, WHITE);
+            DrawText(TextFormat("%d", tile->entropy), destination_rec.x + WFC_TILE_SIZE/2, destination_rec.y + WFC_TILE_SIZE/2, 16, WHITE);
 
-            if (t->entropy == 1) {
-                DrawTexturePro(t->frame.tex, t->frame.source, dest, {}, 0, WHITE);
+            if (tile->entropy == 1) {
+                DrawTexturePro(tile->frame.tex, tile->frame.source, destination_rec, {}, 0, WHITE);
             }
         }
-    }
-
-    if (IsKeyPressed(KEY_SPACE)) {
-        RunWFCIteration();
     }
 }
 
