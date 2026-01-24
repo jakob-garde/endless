@@ -22,15 +22,15 @@ enum TileType {
     TT_CNT,
 };
 
-s8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
+u8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
     { // left
         { 1, 1, 1 }, // grass left 
         { 1, 1, 0 }, // flowers left
-        { 0, 0, 1 }, // rocks left
+        { 1, 0, 1 }, // rocks left
     },
 
     { // right
-        { 1, 1, 0 }, 
+        { 1, 1, 1 }, 
         { 1, 1, 0 },
         { 1, 0, 1 },
     },
@@ -133,7 +133,7 @@ TileType SelectRandomOption(bool *options, s32 tile_entropy) {
         }
     }
 
-    assert(1 == 0 && "requires at least one random option (e.g. entropy >= 1)");
+    assert(1 == 0);
     return TT_CNT;
 }
 
@@ -147,23 +147,28 @@ void Collapse(Grid grid, s32 tile_idx) {
     tile->entropy = 1;
 
     // kernel
-    s32 adjacency_kernel_x[4] = { -1, 1, 0, 0 }; // left right up down
-    s32 adjacency_kernel_y[4] = { 0, 0, -1, 1 };
+    s32 adjacency_kernel_x[4] = { 0, 0, -1, 1 }; // up down left right
+    s32 adjacency_kernel_y[4] = { -1, 1, 0, 0 };
 
     // iterate reduction matrix for tile type
     for (s32 adjacent_tpe = 0; adjacent_tpe < TT_CNT; ++adjacent_tpe) {
 
         // apply the kernel to loop over neighbours
         for (s32 j = 0; j < 4; ++j) {
-            s8 *adjacency = adjacency_matrix[j][tile->collapsed_type]; 
+            u8 *adjacency = adjacency_matrix[j][tile->collapsed_type]; 
+
             if (adjacency[adjacent_tpe] == true) {
                 continue;
             }
 
             s32 neighbour_x = (tile->x + adjacency_kernel_x[j]) % grid.grid_w;
-            s32 neighbour_y = (tile->y + adjacency_kernel_y[j] / grid.grid_w) % grid.grid_h;
+            if (neighbour_x == -1) { neighbour_x = grid.grid_w - 1; }
+            s32 neighbour_y = (tile->y + adjacency_kernel_y[j]) % grid.grid_h;
+            if (neighbour_y == -1) { neighbour_y = grid.grid_h - 1; }
             s32 neighbour_idx = neighbour_y * grid.grid_w + neighbour_x;
+
             Tile *neighbour = grid.tiles.arr + neighbour_idx;
+            assert( (neighbour->x != tile->x) || (neighbour->y != tile->y) );
 
             if (neighbour->entropy == 1) {
                 continue;
