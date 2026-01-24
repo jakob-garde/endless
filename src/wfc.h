@@ -11,40 +11,63 @@ enum TileType {
     TT_FLOWERS,
     TT_ROCKS,
 
-    /*
     TT_FOREST_UP,
     TT_FOREST_DOWN,
     TT_FOREST_LEFT,
     TT_FOREST_RIGHT,
     TT_FOREST_INNTER,
-    */
 
     TT_CNT,
 };
 
+
 u8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
-    { // left
-        { 1, 1, 1 }, // grass left 
-        { 1, 1, 0 }, // flowers left
-        { 1, 0, 1 }, // rocks left
-    },
-
-    { // right
-        { 1, 1, 1 }, 
-        { 1, 1, 0 },
-        { 1, 0, 1 },
-    },
-
     { // up
-        { 1, 1, 1 }, 
-        { 1, 1, 0 },
-        { 1, 0, 1 },
+        { 1, 1, 1, /**/ 0, 1, 1, 1, 0 }, 
+        { 1, 1, 0, /**/ 0, 1, 1, 1, 0 },
+        { 1, 0, 1, /**/ 0, 1, 1, 1, 0 },
+
+        { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_UP
+        { 0, 0, 0, /**/ 1, 0, 0, 0, 1 }, // TT_FOREST_DOWN
+        { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_LEFT
+        { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 1, 0, 0, 0, 1 }, // TT_FOREST_INNTER
     },
 
     { // down
-        { 1, 1, 1 }, 
-        { 1, 1, 0 },
-        { 1, 0, 1 },
+        { 1, 1, 1, /**/ 1, 0, 1, 1, 0 }, 
+        { 1, 1, 0, /**/ 1, 0, 1, 1, 0 },
+        { 1, 0, 1, /**/ 1, 0, 1, 1, 0 },
+
+        { 0, 0, 0, /**/ 0, 1, 0, 0, 1 }, // TT_FOREST_UP
+        { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_DOWN
+        { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_LEFT
+        { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 0, 1, 0, 0, 1 }, // TT_FOREST_INNTER
+    },
+
+    { // left
+        { 1, 1, 1, /**/ 1, 1, 0, 1, 0 }, 
+        { 1, 1, 0, /**/ 1, 1, 0, 1, 0 },
+        { 1, 0, 1, /**/ 1, 1, 0, 1, 0 },
+
+        { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_UP
+        { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_DOWN
+        { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_LEFT
+        { 0, 0, 0, /**/ 0, 0, 1, 0, 1 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 0, 0, 1, 0, 1 }, // TT_FOREST_INNTER
+    },
+
+    { // right
+        { 1, 1, 1, /**/ 1, 1, 1, 0, 0 }, 
+        { 1, 1, 0, /**/ 1, 1, 1, 0, 0 },
+        { 1, 0, 1, /**/ 1, 1, 1, 0, 0 },
+
+        { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_UP
+        { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_DOWN
+        { 0, 0, 0, /**/ 0, 0, 0, 1, 1 }, // TT_FOREST_LEFT
+        { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 0, 0, 0, 1, 1 }, // TT_FOREST_INNTER
     },
 };
 
@@ -183,7 +206,7 @@ void Collapse(Grid grid, s32 tile_idx) {
                     neighbour->entropy--;
 
                     if (neighbour->entropy == 1) {
-                        TileCollapse(neighbour);
+                        Collapse(grid, neighbour->idx);
                     }
                 }
             }
@@ -227,15 +250,15 @@ void RunWFC() {
 Frame GetTileFrameByType(TileType tpe) {
     // indices refer to the contents of the map tile sprite sheet (three of each variant)
     s32 rand_index = Rand(3);
-    if (tpe == TT_FLOWERS) {
-        return meadow_frames.arr[rand_index];
-    }
-    else if (tpe == TT_GRASS) {
-        return meadow_frames.arr[rand_index + 3];
-    }
-    else if (tpe == TT_ROCKS) {
-        return meadow_frames.arr[rand_index + 6];
-    }
+    if      (tpe == TT_FLOWERS) { return meadow_frames.arr[rand_index]; }
+    else if (tpe == TT_GRASS) { return meadow_frames.arr[rand_index + 3]; }
+    else if (tpe == TT_ROCKS) { return meadow_frames.arr[rand_index + 6]; }
+
+    else if (tpe == TT_FOREST_LEFT) { return forest_frames.arr[rand_index]; }
+    else if (tpe == TT_FOREST_RIGHT) { return forest_frames.arr[rand_index + 3]; }
+    else if (tpe == TT_FOREST_UP) { return forest_frames.arr[rand_index + 6]; }
+    else if (tpe == TT_FOREST_DOWN) { return forest_frames.arr[rand_index + 9]; }
+    else if (tpe == TT_FOREST_INNTER) { return forest_frames.arr[rand_index + 12]; }
     return meadow_frames.arr[0];
 }
 

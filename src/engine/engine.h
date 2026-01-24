@@ -336,7 +336,7 @@ void Init(const char *title) {
     screen_h = GetScreenHeight();
 
     // usr
-    RandInit();
+    RandInit(42);
 
     a_life = ArenaCreate(arena_mem, ARENA_CAP);
     a_tmp = ArenaCreate(arena_mem_tmp, ARENA_CAP);
