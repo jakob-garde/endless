@@ -137,14 +137,18 @@ TileType SelectRandomOption(bool *options, s32 tile_entropy) {
     return TT_CNT;
 }
 
-void Collapse(Grid grid, s32 tile_idx) {
-    Tile *tile = grid.tiles.arr + tile_idx;
-
-    // collapse to a random, available option
+void TileCollapse(Tile *tile) {
     tile->collapsed_type = SelectRandomOption(tile->options, tile->entropy);
     memset(tile->options, 0, TT_CNT);
     tile->options[tile->collapsed_type] = 1;
     tile->entropy = 1;
+}
+
+void Collapse(Grid grid, s32 tile_idx) {
+    Tile *tile = grid.tiles.arr + tile_idx;
+
+    // collapse to a random, available option
+    TileCollapse(tile);
 
     // kernel
     s32 adjacency_kernel_x[4] = { 0, 0, -1, 1 }; // up down left right
@@ -177,6 +181,10 @@ void Collapse(Grid grid, s32 tile_idx) {
                 if (neighbour->options[adjacent_tpe]) {
                     neighbour->options[adjacent_tpe] = false;
                     neighbour->entropy--;
+
+                    if (neighbour->entropy == 1) {
+                        TileCollapse(neighbour);
+                    }
                 }
             }
         }
@@ -248,7 +256,7 @@ void DrawWFC_DBG() {
 
             // set frame
             if (tile->entropy == 1 && tile->frame.source.width == 0) {
-                tile->frame = GetTileFrameByType( (TileType) tile->collapsed_type);
+                tile->frame = GetTileFrameByType((TileType) tile->collapsed_type);
             }
             DrawText(TextFormat("%d", tile->entropy), destination_rec.x + WFC_TILE_SIZE/2, destination_rec.y + WFC_TILE_SIZE/2, 16, WHITE);
 
