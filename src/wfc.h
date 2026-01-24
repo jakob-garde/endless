@@ -28,16 +28,6 @@ s8 reduction_matrix[TT_CNT][TT_CNT] = {
     }
 };
 
-// TODO: we should write a convenient init function for the reduction matrix
-//      because that is much easier to edit and expand.
-
-
-//u8 reduce_left[TT_CNT];
-//u8 reduce_right[TT_CNT];
-//u8 reduce_up[TT_CNT];
-//u8 reduce_down[TT_CNT];
-
-
 struct Tile {
     s8 options[TT_CNT]; // by-tile
     s32 entropy;
@@ -47,79 +37,19 @@ struct Tile {
 
     bool is_collapsed;
     Frame frame;
-
-    s32 Left(s32 grid_w, s32 grid_h) {
-        s32 x_new;
-        if (x == 0) {
-            x_new = grid_w - 1;
-        }
-        else {
-            x_new = x - 1;
-        }
-        return y * grid_w + x_new;
-    }
-
-    s32 Right(s32 grid_w, s32 grid_h) {
-        s32 x_new;
-        if (x == grid_w - 1) {
-            x_new = 0;
-        }
-        else {
-            x_new = x + 1;
-        }
-        return y * grid_w + x_new;
-    }
-
-    s32 Up(s32 grid_w, s32 grid_h) {
-        s32 y_new;
-        if (y == 0) {
-            y_new = grid_h - 1;
-        }
-        else {
-            y_new = y - 1;
-        }
-        return y_new * grid_w + x;
-    }
-
-    s32 Down(s32 grid_w, s32 grid_h) {
-        s32 y_new;
-        if (y == grid_h - 1) {
-            y_new = 0;
-        }
-        else {
-            y_new = y + 1;
-        }
-        return y_new * grid_w + x;
-    }
-
-    void Reduce(s8 tpe) {
-        if (entropy == 1) {
-            return;
-        }
-        for (s32 i = 0; i < TT_CNT; ++i) {
-            if (options[i] == tpe) {
-                // swap
-                options[i] = options[entropy-1];
-                options[entropy] = 0;
-                entropy--;
-                assert(entropy > 0);
-                return;
-            }
-        }
-    }
 };
 
 inline
 Tile InitTile(s32 grid_stride, s32 idx) {
-    Tile t = {};
-    t.x = idx % grid_stride;
-    t.y = idx / grid_stride;
-    t.idx = idx;
-    t.entropy = TT_CNT;
+    Tile tile = {};
+    tile.x = idx % grid_stride;
+    tile.y = idx / grid_stride;
+    tile.idx = idx;
+    tile.entropy = TT_CNT;
     for (s32 i = 0; i < TT_CNT; ++i) {
-        t.options[i] = i;
+        tile.options[i] = i;
     }
-    return t;
+    return tile;
 }
 
 struct Grid {
@@ -165,32 +95,51 @@ s32 SelectTile(Grid grid) {
     return -1;
 }
 
-void Collapse(Grid grid, s32 idx) {
-    // collapse this tile
-    Tile *t = grid.tiles.arr + idx;
-    s8 tpe = t->options[Rand(t->entropy)];
+void Collapse(Grid grid, s32 tile_idx) {
+    // collapse to a random, available option
+    Tile *tile = grid.tiles.arr + tile_idx;
+    s8 tpe = tile->options[Rand(tile->entropy)];
+    memset(tile->options, 0, TT_CNT);
+    tile->options[0] = tpe;
+    tile->entropy = 1;
 
-    memset(t->options, 0, TT_CNT);
-    t->options[0] = tpe;
-    t->entropy = 1;
+    // type transition matrix
+    s8 *red = reduction_matrix[tpe]; 
 
-    // apply transition matrix to neighbours
-    s8 *red = reduction_matrix[tpe];
-    Tile *s = NULL;
+    // kernel
+    s32 reduction_kernel_x[4] = { -1, 1, 0, 0 }; // left right up down
+    s32 reduction_kernel_y[4] = { 0, 0, -1, 1 };
+
+    // iterate reduction matrix
     for (s32 i = 0; i < TT_CNT; ++i) {
         u8 reduce = red[i];
         if (reduce == -1) {
             break;
         }
 
-        s = grid.tiles.arr + t->Left(grid.grid_w, grid.grid_h);
-        s->Reduce(reduce);
-        s = grid.tiles.arr + t->Right(grid.grid_w, grid.grid_h);
-        s->Reduce(reduce);
-        s = grid.tiles.arr + t->Up(grid.grid_w, grid.grid_h);
-        s->Reduce(reduce);
-        s = grid.tiles.arr + t->Down(grid.grid_w, grid.grid_h);
-        s->Reduce(reduce);
+        // apply the kernel to loop over neighbours
+        for (s32 j = 0; j < 4; ++j) {
+            s32 neighbour_x = (tile->x + reduction_kernel_x[j]) % grid.grid_w;
+            s32 neighbour_y = (tile->y + reduction_kernel_y[j] / grid.grid_w) % grid.grid_h;
+            s32 neighbour_idx = neighbour_y * grid.grid_w + neighbour_x;
+            Tile *neighbour = grid.tiles.arr + neighbour_idx;
+
+            if (tile->entropy > 1) {
+                // search for the option in the tile's list of available options
+                for (s32 k = 0; k < TT_CNT; ++i) {
+                    if (neighbour->options[k] == tpe) {
+                        // swap
+                        neighbour->options[i] = neighbour->options[neighbour->entropy-1];
+                        neighbour->options[neighbour->entropy] = 0;
+                        // update
+                        neighbour->entropy -= 1;
+
+                        assert(neighbour->entropy > 0);
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
 
