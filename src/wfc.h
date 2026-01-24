@@ -11,13 +11,41 @@ enum TileType {
     TT_FLOWERS,
     TT_ROCKS,
 
+    /*
+    TT_FOREST_UP,
+    TT_FOREST_DOWN,
+    TT_FOREST_LEFT,
+    TT_FOREST_RIGHT,
+    TT_FOREST_INNTER,
+    */
+
     TT_CNT,
 };
 
-s8 adjacency_matrix[TT_CNT][TT_CNT] = {
-    { 1, 1, 1 },
-    { 1, 1, 0 },
-    { 1, 0, 1 },
+s8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
+    { // left
+        { 1, 1, 1 }, // grass left 
+        { 1, 1, 0 }, // flowers left
+        { 0, 0, 1 }, // rocks left
+    },
+
+    { // right
+        { 1, 1, 0 }, 
+        { 1, 1, 0 },
+        { 1, 0, 1 },
+    },
+
+    { // up
+        { 1, 1, 1 }, 
+        { 1, 1, 0 },
+        { 1, 0, 1 },
+    },
+
+    { // down
+        { 1, 1, 1 }, 
+        { 1, 1, 0 },
+        { 1, 0, 1 },
+    },
 };
 
 struct Tile {
@@ -123,14 +151,15 @@ void Collapse(Grid grid, s32 tile_idx) {
     s32 adjacency_kernel_y[4] = { 0, 0, -1, 1 };
 
     // iterate reduction matrix for tile type
-    s8 *adjacency = adjacency_matrix[tile->collapsed_type]; 
     for (s32 adjacent_tpe = 0; adjacent_tpe < TT_CNT; ++adjacent_tpe) {
-        if (adjacency[adjacent_tpe] == true) {
-            continue;
-        }
 
         // apply the kernel to loop over neighbours
         for (s32 j = 0; j < 4; ++j) {
+            s8 *adjacency = adjacency_matrix[j][tile->collapsed_type]; 
+            if (adjacency[adjacent_tpe] == true) {
+                continue;
+            }
+
             s32 neighbour_x = (tile->x + adjacency_kernel_x[j]) % grid.grid_w;
             s32 neighbour_y = (tile->y + adjacency_kernel_y[j] / grid.grid_w) % grid.grid_h;
             s32 neighbour_idx = neighbour_y * grid.grid_w + neighbour_x;
@@ -156,10 +185,12 @@ void Collapse(Grid grid, s32 tile_idx) {
 
 Grid grid;
 Array<Frame> meadow_frames;
+Array<Frame> forest_frames;
 
 void InitWFC(s32 grid_size) {
     grid = InitGrid(&a_life, grid_size, grid_size);
     meadow_frames = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
+    forest_frames = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
 }
 
 void RunWFCIteration() {
