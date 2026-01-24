@@ -155,8 +155,8 @@ void Collapse(Grid grid, s32 tile_idx) {
 Grid grid;
 Array<Frame> meadow_frames;
 
-void InitWFC() {
-    grid = InitGrid(&a_life, 8, 8);
+void InitWFC(s32 grid_size) {
+    grid = InitGrid(&a_life, grid_size, grid_size);
     meadow_frames = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
 }
 
@@ -179,17 +179,16 @@ void RunWFC() {
 
 
 Frame GetFrame(TileType tpe) {
+    // indices refer to the contents of the map tile sprite sheet (three of each variant)
+    s32 rand_index = Rand(3);
     if (tpe == TT_FLOWERS) {
-        s32 rand = Rand(2) + 1;
-        return meadow_frames.arr[rand];
+        return meadow_frames.arr[rand_index];
     }
     else if (tpe == TT_GRASS) {
-        s32 rand = Rand(3) + 3;
-        return meadow_frames.arr[rand];
+        return meadow_frames.arr[rand_index + 3];
     }
     else if (tpe == TT_ROCKS) {
-        s32 rand = Rand(3) + 6;
-        return meadow_frames.arr[rand];
+        return meadow_frames.arr[rand_index + 6];
     }
     return meadow_frames.arr[0];
 }
@@ -208,7 +207,6 @@ void DrawWFC() {
             destination_rec.y = tile->y * WFC_TILE_SIZE;
             destination_rec.width = WFC_TILE_SIZE;
             destination_rec.height = WFC_TILE_SIZE;
-
 
             if (tile->is_collapsed == false) {
                 tile->is_collapsed = true;

@@ -9,7 +9,7 @@ void Run() {
     InitEndless();
 
     // test
-    InitWFC();
+    InitWFC(64);
     RunWFC();
     game.SetState(GS_TEST);
 
@@ -29,6 +29,20 @@ void Run() {
             DrawLocation();
         }
         else if (game.state == GS_TEST) {
+
+            if (IsKeyPressed(KEY_UP)) {
+                cam.target.y -= TILE_SZ;
+            }
+            else if (IsKeyPressed(KEY_DOWN)) {
+                cam.target.y += TILE_SZ;
+            }
+            else if (IsKeyPressed(KEY_LEFT)) {
+                cam.target.x -= TILE_SZ;
+            }
+            else if (IsKeyPressed(KEY_RIGHT)) {
+                cam.target.x += TILE_SZ;
+            }
+
             DrawWFC();
         }
         else {
