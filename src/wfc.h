@@ -117,24 +117,18 @@ s32 SelectTile(Grid grid) {
     // returns the first tile with maximum entropy
 
     // find max entropy
-    s32 entropy_max = 0;
+    s32 entropy_min = TT_CNT;
     for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
         Tile *tile = grid.tiles.arr + i;
-        if (tile->entropy > entropy_max) {
-            entropy_max = tile->entropy;
-            if (entropy_max == TT_CNT) {
-                break;
-            }
+        if ((tile->entropy > 1) && (tile->entropy < entropy_min)) {
+            entropy_min = tile->entropy;
         }
     }
 
-    // no more iterations needed
-    if (entropy_max > 1) {
-        for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
-            Tile *t = grid.tiles.arr + i;
-            if (t->entropy == entropy_max) {
-                return i;
-            }
+    for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
+        Tile *t = grid.tiles.arr + i;
+        if (t->entropy == entropy_min) {
+            return i;
         }
     }
 
