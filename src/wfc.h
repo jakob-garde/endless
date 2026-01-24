@@ -11,14 +11,6 @@ enum TileType {
     TT_FLOWERS,
     TT_ROCKS,
 
-    /*
-    TT_FOREST_UP,
-    TT_FOREST_DOWN,
-    TT_FOREST_LEFT,
-    TT_FOREST_RIGHT,
-    TT_FOREST_INNTER,
-    */
-
     TT_CNT,
 };
 
@@ -73,19 +65,20 @@ Grid InitGrid(MArena *a_dest, s32 w, s32 h) {
 s32 SelectTile(Grid grid) {
     // returns the first tile with maximum entropy
 
+    // find max entropy
     s32 entropy_max = 0;
     for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
         Tile *tile = grid.tiles.arr + i;
         if (tile->entropy > entropy_max) {
             entropy_max = tile->entropy;
+            if (entropy_max == TT_CNT) {
+                break;
+            }
         }
     }
 
     // no more iterations needed
-    if (entropy_max == 1) {
-        return -1;
-    }
-    else {
+    if (entropy_max > 1) {
         for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
             Tile *t = grid.tiles.arr + i;
             if (t->entropy == entropy_max) {
@@ -163,12 +156,10 @@ void Collapse(Grid grid, s32 tile_idx) {
 
 Grid grid;
 Array<Frame> meadow_frames;
-Array<Frame> forest_frames;
 
 void InitWFC(s32 grid_size) {
     grid = InitGrid(&a_life, grid_size, grid_size);
     meadow_frames = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
-    forest_frames = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
 }
 
 void RunWFCIteration() {
