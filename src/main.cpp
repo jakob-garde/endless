@@ -43,7 +43,11 @@ void Run() {
                 cam.target.x += TILE_SZ;
             }
 
-            DrawWFC();
+            if (IsKeyPressed(KEY_SPACE)) {
+                RunWFCIteration();
+            }
+
+            DrawWFC_DBG();
         }
         else {
             assert(1 == 0 && "game mode not implemented");

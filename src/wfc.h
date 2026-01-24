@@ -10,36 +10,32 @@ enum TileType {
     TT_GRASS,
     TT_FLOWERS,
     TT_ROCKS,
-    // ...
+
+    /*
+    TT_FOREST_UP,
+    TT_FOREST_DOWN,
+    TT_FOREST_LEFT,
+    TT_FOREST_RIGHT,
+    TT_FOREST_INNTER,
+    */
 
     TT_CNT,
 };
 
-s8 reduction_matrix[TT_CNT][TT_CNT] = {
-    {
-        -1,
-        -1,
-        -1
-    },
-    {
-        (s8) TT_ROCKS,
-        -1,
-        -1 },
-    {
-        (s8) TT_FLOWERS,
-        -1,
-        -1
-    }
+s8 adjacency_matrix[TT_CNT][TT_CNT] = {
+    { 1, 1, 1 },
+    { 1, 1, 0 },
+    { 1, 0, 1 },
 };
 
 struct Tile {
-    s8 options[TT_CNT]; // by-tile
+    bool options[TT_CNT]; // by-tile
     s32 entropy;
     s32 x;
     s32 y;
     s32 idx;
 
-    bool is_collapsed;
+    TileType collapsed_type;
     Frame frame;
 };
 
@@ -50,8 +46,9 @@ Tile InitTile(s32 grid_stride, s32 idx) {
     tile.y = idx / grid_stride;
     tile.idx = idx;
     tile.entropy = TT_CNT;
+    tile.collapsed_type = TT_CNT;
     for (s32 i = 0; i < TT_CNT; ++i) {
-        tile.options[i] = i;
+        tile.options[i] = true;
     }
     return tile;
 }
@@ -74,7 +71,8 @@ Grid InitGrid(MArena *a_dest, s32 w, s32 h) {
 }
 
 s32 SelectTile(Grid grid) {
-    // just the first one, not a random one !
+    // returns the first tile with maximum entropy
+
     s32 entropy_max = 0;
     for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
         Tile *tile = grid.tiles.arr + i;
@@ -99,48 +97,59 @@ s32 SelectTile(Grid grid) {
     return -1;
 }
 
+inline
+TileType SelectRandomOption(bool *options, s32 tile_entropy) {
+    s32 select_target = Rand(tile_entropy);
+    s32 select_idx = 0;
+    for (s32 i = 0; i < TT_CNT; ++i) {
+        if (options[i]) {
+            if (select_idx == select_target) {
+                return (TileType) i;
+            }
+            else {
+                select_idx++;
+            }
+        }
+    }
+
+    assert(1 == 0 && "requires at least one random option (e.g. entropy >= 1)");
+    return TT_CNT;
+}
+
 void Collapse(Grid grid, s32 tile_idx) {
-    // collapse to a random, available option
     Tile *tile = grid.tiles.arr + tile_idx;
-    s8 tpe = tile->options[Rand(tile->entropy)];
+
+    // collapse to a random, available option
+    tile->collapsed_type = SelectRandomOption(tile->options, tile->entropy);
     memset(tile->options, 0, TT_CNT);
-    tile->options[0] = tpe;
+    tile->options[tile->collapsed_type] = 1;
     tile->entropy = 1;
 
-    // type transition matrix
-    s8 *red = reduction_matrix[tpe]; 
-
     // kernel
-    s32 reduction_kernel_x[4] = { -1, 1, 0, 0 }; // left right up down
-    s32 reduction_kernel_y[4] = { 0, 0, -1, 1 };
+    s32 adjacency_kernel_x[4] = { -1, 1, 0, 0 }; // left right up down
+    s32 adjacency_kernel_y[4] = { 0, 0, -1, 1 };
 
-    // iterate reduction matrix
-    for (s32 i = 0; i < TT_CNT; ++i) {
-        u8 reduce = red[i];
-        if (reduce == -1) {
-            break;
+    // iterate reduction matrix for tile type
+    s8 *adjacency = adjacency_matrix[tile->collapsed_type]; 
+    for (s32 adjacent_tpe = 0; adjacent_tpe < TT_CNT; ++adjacent_tpe) {
+        if (adjacency[adjacent_tpe] == true) {
+            continue;
         }
 
         // apply the kernel to loop over neighbours
         for (s32 j = 0; j < 4; ++j) {
-            s32 neighbour_x = (tile->x + reduction_kernel_x[j]) % grid.grid_w;
-            s32 neighbour_y = (tile->y + reduction_kernel_y[j] / grid.grid_w) % grid.grid_h;
+            s32 neighbour_x = (tile->x + adjacency_kernel_x[j]) % grid.grid_w;
+            s32 neighbour_y = (tile->y + adjacency_kernel_y[j] / grid.grid_w) % grid.grid_h;
             s32 neighbour_idx = neighbour_y * grid.grid_w + neighbour_x;
             Tile *neighbour = grid.tiles.arr + neighbour_idx;
 
-            if (tile->entropy > 1) {
-                // search for the option in the tile's list of available options
-                for (s32 k = 0; k < TT_CNT; ++i) {
-                    if (neighbour->options[k] == tpe) {
-                        // swap
-                        neighbour->options[i] = neighbour->options[neighbour->entropy-1];
-                        neighbour->options[neighbour->entropy] = 0;
-                        // update
-                        neighbour->entropy -= 1;
-
-                        assert(neighbour->entropy > 0);
-                        break;
-                    }
+            if (neighbour->entropy == 1) {
+                continue;
+            }
+            else {
+                if (neighbour->options[adjacent_tpe]) {
+                    neighbour->options[adjacent_tpe] = false;
+                    neighbour->entropy--;
                 }
             }
         }
@@ -154,10 +163,12 @@ void Collapse(Grid grid, s32 tile_idx) {
 
 Grid grid;
 Array<Frame> meadow_frames;
+Array<Frame> forest_frames;
 
 void InitWFC(s32 grid_size) {
     grid = InitGrid(&a_life, grid_size, grid_size);
     meadow_frames = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
+    forest_frames = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
 }
 
 void RunWFCIteration() {
@@ -178,7 +189,7 @@ void RunWFC() {
 //  drawing
 
 
-Frame GetFrame(TileType tpe) {
+Frame GetTileFrameByType(TileType tpe) {
     // indices refer to the contents of the map tile sprite sheet (three of each variant)
     s32 rand_index = Rand(3);
     if (tpe == TT_FLOWERS) {
@@ -194,7 +205,7 @@ Frame GetFrame(TileType tpe) {
 }
 
 #define WFC_TILE_SIZE 64
-void DrawWFC() {
+void DrawWFC_DBG() {
     ClearBackground(BLACK);
 
     for (s32 j = 0; j < grid.grid_h; ++j) {
@@ -208,11 +219,10 @@ void DrawWFC() {
             destination_rec.width = WFC_TILE_SIZE;
             destination_rec.height = WFC_TILE_SIZE;
 
-            if (tile->is_collapsed == false) {
-                tile->is_collapsed = true;
-                tile->frame = GetFrame( (TileType) tile->options[0]);
+            // set frame
+            if (tile->entropy == 1 && tile->frame.source.width == 0) {
+                tile->frame = GetTileFrameByType( (TileType) tile->collapsed_type);
             }
-
             DrawText(TextFormat("%d", tile->entropy), destination_rec.x + WFC_TILE_SIZE/2, destination_rec.y + WFC_TILE_SIZE/2, 16, WHITE);
 
             if (tile->entropy == 1) {
