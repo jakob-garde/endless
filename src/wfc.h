@@ -27,8 +27,8 @@ u8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
         { 1, 1, 0, /**/ 0, 1, 1, 1, 0 },
         { 1, 0, 1, /**/ 0, 1, 1, 1, 0 },
 
-        { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_UP
-        { 0, 0, 0, /**/ 1, 0, 0, 0, 1 }, // TT_FOREST_DOWN
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_UP
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_DOWN
         { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_LEFT
         { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_RIGHT
         { 0, 0, 0, /**/ 1, 0, 0, 0, 1 }, // TT_FOREST_INNTER
@@ -39,8 +39,8 @@ u8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
         { 1, 1, 0, /**/ 1, 0, 1, 1, 0 },
         { 1, 0, 1, /**/ 1, 0, 1, 1, 0 },
 
-        { 0, 0, 0, /**/ 0, 1, 0, 0, 1 }, // TT_FOREST_UP
-        { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_DOWN
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_UP
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_DOWN
         { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_LEFT
         { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_RIGHT
         { 0, 0, 0, /**/ 0, 1, 0, 0, 1 }, // TT_FOREST_INNTER
@@ -53,8 +53,8 @@ u8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
 
         { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_UP
         { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_DOWN
-        { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_LEFT
-        { 0, 0, 0, /**/ 0, 0, 1, 0, 1 }, // TT_FOREST_RIGHT
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_LEFT
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_RIGHT
         { 0, 0, 0, /**/ 0, 0, 1, 0, 1 }, // TT_FOREST_INNTER
     },
 
@@ -65,8 +65,8 @@ u8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
 
         { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_UP
         { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_DOWN
-        { 0, 0, 0, /**/ 0, 0, 0, 1, 1 }, // TT_FOREST_LEFT
-        { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_LEFT
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_RIGHT
         { 0, 0, 0, /**/ 0, 0, 0, 1, 1 }, // TT_FOREST_INNTER
     },
 };
@@ -249,16 +249,15 @@ void RunWFC() {
 
 Frame GetTileFrameByType(TileType tpe) {
     // indices refer to the contents of the map tile sprite sheet (three of each variant)
-    s32 rand_index = Rand(3);
-    if      (tpe == TT_FLOWERS) { return meadow_frames.arr[rand_index]; }
-    else if (tpe == TT_GRASS) { return meadow_frames.arr[rand_index + 3]; }
-    else if (tpe == TT_ROCKS) { return meadow_frames.arr[rand_index + 6]; }
+    if      (tpe == TT_FLOWERS) { return meadow_frames.arr[Rand(3)]; }
+    else if (tpe == TT_GRASS) { return meadow_frames.arr[Rand(3) + 3]; }
+    else if (tpe == TT_ROCKS) { return meadow_frames.arr[Rand(3) + 6]; }
 
-    else if (tpe == TT_FOREST_LEFT) { return forest_frames.arr[rand_index]; }
-    else if (tpe == TT_FOREST_RIGHT) { return forest_frames.arr[rand_index + 3]; }
-    else if (tpe == TT_FOREST_UP) { return forest_frames.arr[rand_index + 6]; }
-    else if (tpe == TT_FOREST_DOWN) { return forest_frames.arr[rand_index + 9]; }
-    else if (tpe == TT_FOREST_INNTER) { return forest_frames.arr[rand_index + 12]; }
+    else if (tpe == TT_FOREST_UP) { return forest_frames.arr[0]; }
+    else if (tpe == TT_FOREST_DOWN) { return forest_frames.arr[1]; }
+    else if (tpe == TT_FOREST_LEFT) { return forest_frames.arr[2]; }
+    else if (tpe == TT_FOREST_RIGHT) { return forest_frames.arr[3]; }
+    else if (tpe == TT_FOREST_INNTER) { return forest_frames.arr[4]; }
     return meadow_frames.arr[0];
 }
 
