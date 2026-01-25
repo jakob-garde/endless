@@ -1,6 +1,6 @@
 #include "engine/includes.h"
-#include "overworld.h"
 #include "wfc.h"
+#include "overworld.h"
 #include "endless.h"
 
 
@@ -9,12 +9,11 @@ void Run() {
     InitEndless();
 
     // test
-    InitWFC(64);
-    RunWFC();
-    game.SetState(GS_TEST);
+    WFCGrid test_grid = InitWFC(64);
+    RunWFC(test_grid);
 
     // start
-    //game.SetState(GS_OVERWORLD);
+    game.SetState(GS_OVERWORLD);
 
     while (!WindowShouldClose()) {
         UpdateBase();
@@ -23,6 +22,12 @@ void Run() {
         if (game.state == GS_OVERWORLD) {
             UpdateOverworld();
             DrawOverworld();
+
+            if (IsKeyPressed(KEY_T)) {
+                game.SetState(GS_TEST);
+                cam.target.x = 0;
+                cam.target.y = 0;
+            }
         }
         else if (game.state == GS_LOCATION) {
             UpdateLocation();
@@ -30,24 +35,27 @@ void Run() {
         }
         else if (game.state == GS_TEST) {
 
-            if (IsKeyPressed(KEY_UP)) {
-                cam.target.y -= TILE_SZ;
+            if (IsKeyDown(KEY_UP)) {
+                cam.target.y -= 8;
             }
-            else if (IsKeyPressed(KEY_DOWN)) {
-                cam.target.y += TILE_SZ;
+            else if (IsKeyDown(KEY_DOWN)) {
+                cam.target.y += 8;
             }
-            else if (IsKeyPressed(KEY_LEFT)) {
-                cam.target.x -= TILE_SZ;
+            else if (IsKeyDown(KEY_LEFT)) {
+                cam.target.x -= 8;
             }
-            else if (IsKeyPressed(KEY_RIGHT)) {
-                cam.target.x += TILE_SZ;
-            }
-
-            if (IsKeyPressed(KEY_SPACE)) {
-                RunWFCIteration();
+            else if (IsKeyDown(KEY_RIGHT)) {
+                cam.target.x += 8;
             }
 
-            DrawWFC_DBG();
+            cam.target.x += 1;
+            cam.target.y += 1;
+
+            if (IsKeyPressed(KEY_T)) {
+                game.SetState(GS_OVERWORLD);
+            }
+
+            DrawWFC_DBG(test_grid);
         }
         else {
             assert(1 == 0 && "game mode not implemented");

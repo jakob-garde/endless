@@ -3,17 +3,20 @@
 
 
 #define MAP_TILES_CAP 255
-#define CHUNK_W 8
-#define CHUNK_H 8
+#define CHUNK_W 64
+#define CHUNK_H 64
 #define CHUNK_LEN CHUNK_W * CHUNK_H
 #define TILE_SZ 64
 
 
-struct Chunk {
-    s32 grid_x;
-    s32 grid_y;
-    Array<Color> colors;
-    Array<f32> values;
+struct MapRegion {
+    s32 map_y;
+    s32 map_x;
+    s32 width_tiles;
+    s32 height_tiles;
+    u64 hash_key;
+
+    Array<Tile> tiles;
 };
 
 struct EndlessMap {
@@ -23,6 +26,9 @@ struct EndlessMap {
 EndlessMap *EndlessMapInit(MArena *a_dest) {
     EndlessMap *map = ArenaAlloc<EndlessMap>(a_dest);
     map->chunks = InitMap(a_dest, MAP_TILES_CAP * 2);
+
+    meadow_frames_DBG = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
+    forest_frames_DBG = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
 
     return map;
 }
@@ -43,35 +49,29 @@ u64 ChunkKey(s32 grid_x, s32 grid_y) {
     return key;
 }
 
-Chunk *ChunkGet(EndlessMap *map, s32 grid_x, s32 grid_y) {
+MapRegion *ChunkGet(EndlessMap *map, s32 grid_x, s32 grid_y) {
     u64 key = ChunkKey( grid_x, grid_y);
-    Chunk *tile = (Chunk*) MapGet(&map->chunks, key);
+    MapRegion *tile = (MapRegion*) MapGet(&map->chunks, key);
     return tile;
 }
 
-Chunk *ChunkGet(EndlessMap *map, u64 hash_key) {
-    Chunk *tile = (Chunk*) MapGet(&map->chunks, hash_key);
+MapRegion *ChunkGet(EndlessMap *map, u64 hash_key) {
+    MapRegion *tile = (MapRegion*) MapGet(&map->chunks, hash_key);
     return tile;
 }
 
-void ChunkCreate(MArena *a_dest, EndlessMap *map, u8 colormap[64][4], s32 grid_x, s32 grid_y) {
-    Chunk *tile = ArenaAlloc<Chunk>(a_dest);
-    tile->colors = InitArray<Color>(a_dest, CHUNK_W * CHUNK_H);
-    tile->values = InitArray<f32>(a_dest, CHUNK_W * CHUNK_H);
-    tile->grid_x = grid_x;
-    tile->grid_y = grid_y;
+void ChunkCreate(MArena *a_dest, EndlessMap *map, s32 grid_x, s32 grid_y) {
+    MapRegion *chunk = ArenaAlloc<MapRegion>(a_dest);
+    chunk->map_x = grid_x;
+    chunk->map_y = grid_y;
+    chunk->hash_key = ChunkKey(chunk->map_x, chunk->map_y);
 
-    for (s32 i = 0; i < CHUNK_W; ++i) {
-        for (s32 j = 0; j < CHUNK_H; ++j) {
-            f32 val = Rand01();
-            Color col = ColorMapGet(val, colormap);
-            tile->colors.arr[i * CHUNK_W + j] = col;
-            tile->values.arr[i * CHUNK_W + j] = val;
-        }
-    }
+    WFCGrid grid = InitGrid(a_dest, CHUNK_W, CHUNK_H);
+    RunWFC(grid);
+    SetWFCGridTextures(grid);
+    chunk->tiles = grid.tiles;
 
-    u64 key = ChunkKey(tile->grid_x, tile->grid_y);
-    MapPut(&map->chunks, key, tile);
+    MapPut(&map->chunks, chunk->hash_key, chunk);
 }
 
 

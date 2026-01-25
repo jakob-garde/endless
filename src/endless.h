@@ -3,22 +3,25 @@
 
 
 EndlessMap *map;
-Texture tex_forest[7];
 s32 location_sz = 12;
 Entity paws = {};
 Entity cross = {};
+Array<Frame> meadow_frames;
+Array<Frame> forest_frames;
 
 
 void InitEndless() {
     map = EndlessMapInit(&a_life);
 
-    s32 grid_x = 0;
-    s32 grid_y = 0;
-
-    ChunkCreate(&a_life, map, colormap_paletted_autumn, 0, 0);
-    ChunkCreate(&a_life, map, colormap_paletted_autumn, 1, 0);
-    ChunkCreate(&a_life, map, colormap_paletted_autumn, 0, 1);
-    ChunkCreate(&a_life, map, colormap_paletted_autumn, 1, 1);
+    meadow_frames_DBG = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
+    forest_frames_DBG = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
+    ChunkCreate(&a_life, map, 0, 0);
+    //ChunkCreate(&a_life, map, 1, 0);
+    //ChunkCreate(&a_life, map, 0, 1);
+    //ChunkCreate(&a_life, map, 1, 1);
+    ChunkCreate(&a_life, map, 0, -1);
+    ChunkCreate(&a_life, map, -1, 0);
+    ChunkCreate(&a_life, map, -1, -1);
 
     cross.tpe = ET_MAP_CROSS;
     cross.disable_draw_frames = true;
@@ -120,29 +123,30 @@ void DrawOverworld() {
 
     // draw all map tiles
     MapIter iter = {};
-    Chunk *t = NULL;
+    MapRegion *chunk = NULL;
     do {
-        t = (Chunk*) MapNextVal(&map->chunks, &iter);
-        if (t) {
-            s32 offset_x = t->grid_x * TILE_SZ * CHUNK_W;
-            s32 offset_y = t->grid_y * TILE_SZ * CHUNK_H;
+        chunk = (MapRegion*) MapNextVal(&map->chunks, &iter);
+        
+        if (chunk) {
+            s32 offset_x = chunk->map_x * TILE_SZ * CHUNK_W;
+            s32 offset_y = chunk->map_y * TILE_SZ * CHUNK_H;
 
             for (s32 i = 0; i < CHUNK_W; ++i) {
                 for (s32 j = 0; j < CHUNK_H; ++j) {
-                    // draw the square given colour
-                    //Color col = t->colors.arr[i * TILE_W + j];
-                    //DrawRectangle(i * square_sz + offset_x, j * square_sz + offset_y, square_sz, square_sz, col);
+                    s32 idx = j * CHUNK_W + i;
+                    Tile *tile = chunk->tiles.arr + idx;
 
-                    // blit a texture into it
-                    f32 x = i * TILE_SZ + offset_x;
-                    f32 y = j * TILE_SZ + offset_y;
-                    f32 val7 = t->values.arr[i * CHUNK_W + j] * 7;
-                    s32 idx = ((s32) floor(val7)) % 7;
-                    DrawTextureEx(tex_forest[idx], {x, y}, 0, 4, WHITE);
+                    Rectangle destination_rec = {};
+                    destination_rec.x = tile->x * TILE_SZ + offset_x;
+                    destination_rec.y = tile->y * TILE_SZ + offset_y;
+                    destination_rec.width = TILE_SZ;
+                    destination_rec.height = TILE_SZ;
+
+                    DrawTexturePro(tile->frame.tex, tile->frame.source, destination_rec, {}, 0, WHITE);
                 }
             }
         }
-    } while (t != NULL);
+    } while (chunk != NULL);
 
     // draw entities
     for (s32 i = 0; i < entities.len; ++i) {

@@ -96,14 +96,14 @@ Tile InitTile(s32 grid_stride, s32 idx) {
     return tile;
 }
 
-struct Grid {
+struct WFCGrid {
     Array<Tile> tiles;
     s32 grid_w;
     s32 grid_h;
 };
 
-Grid InitGrid(MArena *a_dest, s32 w, s32 h) {
-    Grid grid = {};
+WFCGrid InitGrid(MArena *a_dest, s32 w, s32 h) {
+    WFCGrid grid = {};
     grid.grid_w = w;
     grid.grid_h = h;
     grid.tiles = InitArray<Tile>(a_dest, w * h);
@@ -113,7 +113,7 @@ Grid InitGrid(MArena *a_dest, s32 w, s32 h) {
     return grid;
 }
 
-s32 SelectTile(Grid grid) {
+s32 SelectTile(WFCGrid grid) {
     // returns the first tile with maximum entropy
 
     // find max entropy
@@ -165,7 +165,7 @@ void TileCollapse(Tile *tile) {
 s32 adjacency_kernel_x[4] = { 0, 0, -1, 1 }; // up down left right
 s32 adjacency_kernel_y[4] = { -1, 1, 0, 0 };
 
-void Collapse(Grid grid, s32 tile_idx) {
+void Collapse(WFCGrid grid, s32 tile_idx) {
     Tile *tile = grid.tiles.arr + tile_idx;
 
     // collapse to a random, available option
@@ -208,27 +208,7 @@ void Collapse(Grid grid, s32 tile_idx) {
     }
 }
 
-
-//
-//  user
-
-
-Grid grid;
-Array<Frame> meadow_frames;
-Array<Frame> forest_frames;
-
-void InitWFC(s32 grid_size) {
-    grid = InitGrid(&a_life, grid_size, grid_size);
-    meadow_frames = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
-    forest_frames = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
-}
-
-void RunWFCIteration() {
-    s32 idx = SelectTile(grid);
-    Collapse(grid, idx);
-}
-
-void RunWFC() {
+void RunWFC(WFCGrid grid) {
     s32 tile_idx = SelectTile(grid);
     while (tile_idx >= 0) {
         Collapse(grid, tile_idx);
@@ -238,25 +218,57 @@ void RunWFC() {
 
 
 //
+//  user
+
+
+Array<Frame> meadow_frames_DBG;
+Array<Frame> forest_frames_DBG;
+
+WFCGrid InitWFC(s32 grid_size) {
+    WFCGrid grid = InitGrid(&a_life, grid_size, grid_size);
+    meadow_frames_DBG = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
+    forest_frames_DBG = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
+    return grid;
+}
+
+void RunWFCIteration(WFCGrid grid) {
+    s32 idx = SelectTile(grid);
+    Collapse(grid, idx);
+}
+
+
+//
 //  drawing
 
 
 Frame GetTileFrameByType(TileType tpe) {
     // indices refer to the contents of the map tile sprite sheet (three of each variant)
-    if      (tpe == TT_FLOWERS) { return meadow_frames.arr[Rand(3)]; }
-    else if (tpe == TT_GRASS) { return meadow_frames.arr[Rand(3) + 3]; }
-    else if (tpe == TT_ROCKS) { return meadow_frames.arr[Rand(3) + 6]; }
+    if      (tpe == TT_FLOWERS) { return meadow_frames_DBG.arr[Rand(3)]; }
+    else if (tpe == TT_GRASS) { return meadow_frames_DBG.arr[Rand(3) + 3]; }
+    else if (tpe == TT_ROCKS) { return meadow_frames_DBG.arr[Rand(3) + 6]; }
 
-    else if (tpe == TT_FOREST_UP) { return forest_frames.arr[0]; }
-    else if (tpe == TT_FOREST_DOWN) { return forest_frames.arr[1]; }
-    else if (tpe == TT_FOREST_LEFT) { return forest_frames.arr[2]; }
-    else if (tpe == TT_FOREST_RIGHT) { return forest_frames.arr[3]; }
-    else if (tpe == TT_FOREST_INNTER) { return forest_frames.arr[4]; }
-    return meadow_frames.arr[0];
+    else if (tpe == TT_FOREST_UP) { return forest_frames_DBG.arr[0]; }
+    else if (tpe == TT_FOREST_DOWN) { return forest_frames_DBG.arr[1]; }
+    else if (tpe == TT_FOREST_LEFT) { return forest_frames_DBG.arr[2]; }
+    else if (tpe == TT_FOREST_RIGHT) { return forest_frames_DBG.arr[3]; }
+    else if (tpe == TT_FOREST_INNTER) { return forest_frames_DBG.arr[4]; }
+    return meadow_frames_DBG.arr[0];
+}
+
+void SetWFCGridTextures(WFCGrid grid) {
+    for (s32 j = 0; j < grid.grid_h; ++j) {
+        for (s32 i = 0; i < grid.grid_w; ++i) {
+            s32 idx = j * grid.grid_w + i;
+            Tile *tile = grid.tiles.arr + idx;
+            assert(tile->entropy == 1 && "ensure we are working on a collapsed grid");
+
+            tile->frame = GetTileFrameByType((TileType) tile->collapsed_type);
+        }
+    }
 }
 
 #define WFC_TILE_SIZE 64
-void DrawWFC_DBG() {
+void DrawWFC_DBG(WFCGrid grid) {
     ClearBackground(BLACK);
 
     for (s32 j = 0; j < grid.grid_h; ++j) {
