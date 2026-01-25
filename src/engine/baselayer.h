@@ -317,7 +317,7 @@ struct HashMap {
     void PrintElements() {
         for (s32 i = 0; i < slots.len; ++i) {
             KeyVal kv = slots.arr[i];
-            printf("%d: key: %lu, val: %lu, next: %ld\n", i, kv.key, kv.val, kv.next);
+            printf("%d: key: %llu, val: %llu, next: %lld\n", i, kv.key, kv.val, kv.next);
         }
     }
 };
@@ -348,7 +348,7 @@ s64 MapPut(HashMap *map, u64 key, u64 val) {
     }
 
     KeyVal *slot0 = map->slots.arr + (key % len);
-    KeyVal *slot;
+    KeyVal *slot = NULL;
 
     if (slot0->next || slot0->key) {
         map->collisions++;
@@ -461,7 +461,6 @@ s64 MapGetIndex(HashMap *map, u64 key, s64 *prev_idx) {
 }
 
 s64 MapRemove(HashMap *map, u64 key) {
-    u64 len = (u64) map->slots.len;
     s64 prev_idx;
     s64 remove_idx = MapGetIndex(map, key, &prev_idx);
 

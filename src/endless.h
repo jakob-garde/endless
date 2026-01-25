@@ -16,9 +16,6 @@ void InitEndless() {
     meadow_frames_DBG = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
     forest_frames_DBG = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
     ChunkCreate(&a_life, map, 0, 0);
-    //ChunkCreate(&a_life, map, 1, 0);
-    //ChunkCreate(&a_life, map, 0, 1);
-    //ChunkCreate(&a_life, map, 1, 1);
     ChunkCreate(&a_life, map, 0, -1);
     ChunkCreate(&a_life, map, -1, 0);
     ChunkCreate(&a_life, map, -1, -1);
@@ -168,7 +165,7 @@ void DrawOverworld() {
     // draw the map cross
     if (cross.disabled == false) {
         s32 sz = 16;
-        Rectangle rect = {cross.position.x - sz/2.0f, cross.position.y - sz/2.0f, (f32) sz, (f32) sz };
+        //Rectangle rect = {cross.position.x - sz/2.0f, cross.position.y - sz/2.0f, (f32) sz, (f32) sz };
         DrawLineEx( { cross.position.x - sz/2.0f, cross.position.y - sz/2.0f }, { cross.position.x + sz/2.0f, cross.position.y + sz/2.0f }, 8, COLOR_WHITE );
         DrawLineEx( { cross.position.x + sz/2.0f, cross.position.y - sz/2.0f }, { cross.position.x - sz/2.0f, cross.position.y + sz/2.0f }, 8, COLOR_WHITE );
         DrawLineEx( { cross.position.x - sz/2.4f, cross.position.y - sz/2.4f }, { cross.position.x + sz/2.4f, cross.position.y + sz/2.4f }, 4, COLOR_BLACK );

@@ -130,7 +130,7 @@ struct SEffect {
 };
 
 
-#define ARENA_CAP 1024 * 1024 * 64
+#define ARENA_CAP 1024 * 1024 * 16
 u8 arena_mem[ARENA_CAP];
 MArena a_life;
 u8 arena_mem_tmp[ARENA_CAP];
@@ -417,7 +417,7 @@ void Swap() {
         Entity *ent = entities.arr + i;
 
         if (ent->deleted == false) {
-            Entity *added = entities_next.Add(*ent);
+            entities_next.Add(*ent);
         }
     }
 

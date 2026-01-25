@@ -13,7 +13,7 @@ void Run() {
     RunWFC(test_grid);
 
     // start
-    game.SetState(GS_OVERWORLD);
+    game.SetState(GS_TEST);
 
     while (!WindowShouldClose()) {
         UpdateBase();
