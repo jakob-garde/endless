@@ -161,15 +161,15 @@ void TileCollapse(Tile *tile) {
     tile->entropy = 1;
 }
 
+// kernel
+s32 adjacency_kernel_x[4] = { 0, 0, -1, 1 }; // up down left right
+s32 adjacency_kernel_y[4] = { -1, 1, 0, 0 };
+
 void Collapse(Grid grid, s32 tile_idx) {
     Tile *tile = grid.tiles.arr + tile_idx;
 
     // collapse to a random, available option
     TileCollapse(tile);
-
-    // kernel
-    s32 adjacency_kernel_x[4] = { 0, 0, -1, 1 }; // up down left right
-    s32 adjacency_kernel_y[4] = { -1, 1, 0, 0 };
 
     // iterate reduction matrix for tile type
     for (s32 adjacent_tpe = 0; adjacent_tpe < TT_CNT; ++adjacent_tpe) {
