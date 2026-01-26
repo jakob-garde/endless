@@ -1,4 +1,27 @@
 
+260126:
+
+Since then, I was working on procgen - wavefunction collapse algorithm for map
+generation. Got it working in stages and now we can create a map with three
+types of meadow / grass tiles and up/down/left/right/inner forest tiles.
+
+I had some problems which were resolved in stages. The code evolved nicely with
+an initial version which was gradually reimplemented and refactored into
+something with fewer bugs and nicer code. I've considered writing an article 
+about how it evolved.
+
+Hashing out the stages of implementation:
+
+1) First implementation - 572cce7a39e858449717f81d0209f65239bf71ae
+2) Total re-implementation - c234161a2d06905d5537d83be3049e248f264fc4
+3) Code compression: adjacency matrix - 5d4b5220c419c59a58191d99804a49ebff699b69
+4) Directional adjacency & forest tiles - caa9917226935536cfd1508dc9a17539c76ddfab
+5) Integration into the app - b98532b683f09dcb14900cf9c2439a3ecd9749d1
+
+Let's get the five versions of the file, checking that everything works at 
+every stage.
+
+
 260119:
 
 Day 5: 
