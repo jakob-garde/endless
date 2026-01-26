@@ -1,0 +1,317 @@
+#ifndef __WFC_H__
+#define __WFC_H__
+
+
+/*
+Integration:
+- Rename types to be more specific
+- Do not depend on global variables
+- One function to run the algorithm (lib section)
+- Function to apply draw-able frame object to tiles, a post-run step (draw section)
+- Local user section is instead a few debug functions for potential future use
+- User code is now in the app, we are calling it from the outside 
+- Implementation of lib code is still about ~220 lines
+- Draw function was copy-pasted and adapted in user code 
+
+Problems: Can be changed later; and we are moving ahead at this point
+- Wanted refactor: Tile type is not great for use in the app
+- Wanted extension: A way to stitch separately generated regions created by the algorithm
+- Wanted bugfix: Very rare incorrect placements can occur
+*/
+
+
+//
+//  lib
+
+
+enum TileType {
+    TT_GRASS,
+    TT_FLOWERS,
+    TT_ROCKS,
+
+    TT_FOREST_UP,
+    TT_FOREST_DOWN,
+    TT_FOREST_LEFT,
+    TT_FOREST_RIGHT,
+    TT_FOREST_INNTER,
+
+    TT_CNT,
+};
+
+
+u8 adjacency_matrix[4][TT_CNT][TT_CNT] = {
+    { // up
+        { 1, 1, 1, /**/ 0, 1, 1, 1, 0 }, 
+        { 1, 1, 0, /**/ 0, 1, 1, 1, 0 },
+        { 1, 0, 1, /**/ 0, 1, 1, 1, 0 },
+
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_UP
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_DOWN
+        { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_LEFT
+        { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 1, 0, 0, 0, 1 }, // TT_FOREST_INNTER
+    },
+
+    { // down
+        { 1, 1, 1, /**/ 1, 0, 1, 1, 0 }, 
+        { 1, 1, 0, /**/ 1, 0, 1, 1, 0 },
+        { 1, 0, 1, /**/ 1, 0, 1, 1, 0 },
+
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_UP
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_DOWN
+        { 1, 1, 1, /**/ 0, 0, 1, 0, 0 }, // TT_FOREST_LEFT
+        { 1, 1, 1, /**/ 0, 0, 0, 1, 0 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 0, 1, 0, 0, 1 }, // TT_FOREST_INNTER
+    },
+
+    { // left
+        { 1, 1, 1, /**/ 1, 1, 0, 1, 0 }, 
+        { 1, 1, 0, /**/ 1, 1, 0, 1, 0 },
+        { 1, 0, 1, /**/ 1, 1, 0, 1, 0 },
+
+        { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_UP
+        { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_DOWN
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_LEFT
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 0, 0, 1, 0, 1 }, // TT_FOREST_INNTER
+    },
+
+    { // right
+        { 1, 1, 1, /**/ 1, 1, 1, 0, 0 }, 
+        { 1, 1, 0, /**/ 1, 1, 1, 0, 0 },
+        { 1, 0, 1, /**/ 1, 1, 1, 0, 0 },
+
+        { 1, 1, 1, /**/ 1, 0, 0, 0, 0 }, // TT_FOREST_UP
+        { 1, 1, 1, /**/ 0, 1, 0, 0, 0 }, // TT_FOREST_DOWN
+        { 0, 0, 0, /**/ 0, 0, 0, 0, 1 }, // TT_FOREST_LEFT
+        { 1, 1, 1, /**/ 0, 0, 0, 0, 0 }, // TT_FOREST_RIGHT
+        { 0, 0, 0, /**/ 0, 0, 0, 1, 1 }, // TT_FOREST_INNTER
+    },
+};
+
+struct Tile {
+    bool options[TT_CNT]; // by-tile
+    s32 entropy;
+    s32 x;
+    s32 y;
+    s32 idx;
+
+    TileType collapsed_type;
+    Frame frame;
+};
+
+inline
+Tile InitTile(s32 grid_stride, s32 idx) {
+    Tile tile = {};
+    tile.x = idx % grid_stride;
+    tile.y = idx / grid_stride;
+    tile.idx = idx;
+    tile.entropy = TT_CNT;
+    tile.collapsed_type = TT_CNT;
+    for (s32 i = 0; i < TT_CNT; ++i) {
+        tile.options[i] = true;
+    }
+    return tile;
+}
+
+struct WFCGrid {
+    Array<Tile> tiles;
+    s32 grid_w;
+    s32 grid_h;
+};
+
+WFCGrid InitGrid(MArena *a_dest, s32 w, s32 h) {
+    WFCGrid grid = {};
+    grid.grid_w = w;
+    grid.grid_h = h;
+    grid.tiles = InitArray<Tile>(a_dest, w * h);
+    for (s32 i = 0; i < w * h; ++i) {
+        grid.tiles.Add( InitTile(w, i) );
+    }
+    return grid;
+}
+
+s32 SelectTile(WFCGrid grid) {
+    // returns the first tile with maximum entropy
+
+    // find max entropy
+    s32 entropy_min = TT_CNT;
+    for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
+        Tile *tile = grid.tiles.arr + i;
+        if ((tile->entropy > 1) && (tile->entropy < entropy_min)) {
+            entropy_min = tile->entropy;
+        }
+    }
+
+    for (s32 i = 0; i < grid.grid_h * grid.grid_w; ++i) {
+        Tile *t = grid.tiles.arr + i;
+        if (t->entropy == entropy_min) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+inline
+TileType SelectRandomOption(bool *options, s32 tile_entropy) {
+    s32 select_target = Rand(tile_entropy);
+    s32 select_idx = 0;
+    for (s32 i = 0; i < TT_CNT; ++i) {
+        if (options[i]) {
+            if (select_idx == select_target) {
+                return (TileType) i;
+            }
+            else {
+                select_idx++;
+            }
+        }
+    }
+
+    assert(1 == 0);
+    return TT_CNT;
+}
+
+void TileCollapse(Tile *tile) {
+    tile->collapsed_type = SelectRandomOption(tile->options, tile->entropy);
+    memset(tile->options, 0, TT_CNT);
+    tile->options[tile->collapsed_type] = 1;
+    tile->entropy = 1;
+}
+
+// kernel
+s32 adjacency_kernel_x[4] = { 0, 0, -1, 1 }; // up down left right
+s32 adjacency_kernel_y[4] = { -1, 1, 0, 0 };
+
+void Collapse(WFCGrid grid, s32 tile_idx) {
+    Tile *tile = grid.tiles.arr + tile_idx;
+
+    // collapse to a random, available option
+    TileCollapse(tile);
+
+    // iterate reduction matrix for tile type
+    for (s32 adjacent_tpe = 0; adjacent_tpe < TT_CNT; ++adjacent_tpe) {
+
+        // apply the kernel to loop over neighbours
+        for (s32 j = 0; j < 4; ++j) {
+            u8 *adjacency = adjacency_matrix[j][tile->collapsed_type]; 
+
+            if (adjacency[adjacent_tpe] == true) {
+                continue;
+            }
+
+            s32 neighbour_x = (tile->x + adjacency_kernel_x[j]) % grid.grid_w;
+            if (neighbour_x == -1) { neighbour_x = grid.grid_w - 1; }
+            s32 neighbour_y = (tile->y + adjacency_kernel_y[j]) % grid.grid_h;
+            if (neighbour_y == -1) { neighbour_y = grid.grid_h - 1; }
+            s32 neighbour_idx = neighbour_y * grid.grid_w + neighbour_x;
+
+            Tile *neighbour = grid.tiles.arr + neighbour_idx;
+            assert( (neighbour->x != tile->x) || (neighbour->y != tile->y) );
+
+            if (neighbour->entropy == 1) {
+                continue;
+            }
+            else {
+                if (neighbour->options[adjacent_tpe]) {
+                    neighbour->options[adjacent_tpe] = false;
+                    neighbour->entropy--;
+
+                    if (neighbour->entropy == 1) {
+                        Collapse(grid, neighbour->idx);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void RunWFC(WFCGrid grid) {
+    s32 tile_idx = SelectTile(grid);
+    while (tile_idx >= 0) {
+        Collapse(grid, tile_idx);
+        tile_idx = SelectTile(grid);
+    }
+}
+
+
+//
+//  user
+
+
+Array<Frame> meadow_frames_DBG;
+Array<Frame> forest_frames_DBG;
+
+WFCGrid InitWFC(s32 grid_size) {
+    WFCGrid grid = InitGrid(&a_life, grid_size, grid_size);
+    meadow_frames_DBG = InitAnimation(&a_life, "resources/meadow.png", ET_BACKGROUND, 0, 1).frames;
+    forest_frames_DBG = InitAnimation(&a_life, "resources/forest.png", ET_BACKGROUND, 0, 1).frames;
+    return grid;
+}
+
+void RunWFCIteration(WFCGrid grid) {
+    s32 idx = SelectTile(grid);
+    Collapse(grid, idx);
+}
+
+
+//
+//  drawing
+
+
+Frame GetTileFrameByType(TileType tpe) {
+    // indices refer to the contents of the map tile sprite sheet (three of each variant)
+    if      (tpe == TT_FLOWERS) { return meadow_frames_DBG.arr[Rand(3)]; }
+    else if (tpe == TT_GRASS) { return meadow_frames_DBG.arr[Rand(3) + 3]; }
+    else if (tpe == TT_ROCKS) { return meadow_frames_DBG.arr[Rand(3) + 6]; }
+
+    else if (tpe == TT_FOREST_UP) { return forest_frames_DBG.arr[0]; }
+    else if (tpe == TT_FOREST_DOWN) { return forest_frames_DBG.arr[1]; }
+    else if (tpe == TT_FOREST_LEFT) { return forest_frames_DBG.arr[2]; }
+    else if (tpe == TT_FOREST_RIGHT) { return forest_frames_DBG.arr[3]; }
+    else if (tpe == TT_FOREST_INNTER) { return forest_frames_DBG.arr[4]; }
+    return meadow_frames_DBG.arr[0];
+}
+
+void SetWFCGridTextures(WFCGrid grid) {
+    for (s32 j = 0; j < grid.grid_h; ++j) {
+        for (s32 i = 0; i < grid.grid_w; ++i) {
+            s32 idx = j * grid.grid_w + i;
+            Tile *tile = grid.tiles.arr + idx;
+            assert(tile->entropy == 1 && "ensure we are working on a collapsed grid");
+
+            tile->frame = GetTileFrameByType((TileType) tile->collapsed_type);
+        }
+    }
+}
+
+#define WFC_TILE_SIZE 64
+void DrawWFC_DBG(WFCGrid grid) {
+    ClearBackground(BLACK);
+
+    for (s32 j = 0; j < grid.grid_h; ++j) {
+        for (s32 i = 0; i < grid.grid_w; ++i) {
+            s32 idx = j * grid.grid_w + i;
+            Tile *tile = grid.tiles.arr + idx;
+
+            Rectangle destination_rec = {};
+            destination_rec.x = tile->x * WFC_TILE_SIZE;
+            destination_rec.y = tile->y * WFC_TILE_SIZE;
+            destination_rec.width = WFC_TILE_SIZE;
+            destination_rec.height = WFC_TILE_SIZE;
+
+            // set frame
+            if (tile->entropy == 1 && tile->frame.source.width == 0) {
+                tile->frame = GetTileFrameByType((TileType) tile->collapsed_type);
+            }
+            DrawText(TextFormat("%d", tile->entropy), destination_rec.x + WFC_TILE_SIZE/2, destination_rec.y + WFC_TILE_SIZE/2, 16, WHITE);
+
+            if (tile->entropy == 1) {
+                DrawTexturePro(tile->frame.tex, tile->frame.source, destination_rec, {}, 0, WHITE);
+            }
+        }
+    }
+}
+
+
+#endif
